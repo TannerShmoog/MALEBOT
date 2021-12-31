@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+key.txt
+songdir.txt
+test.py
+ffmpeg.exe
+ffprobe.exe
