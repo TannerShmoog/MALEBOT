@@ -3,7 +3,9 @@ A simple discord music bot to stream from a local library of files
 
 
 ---------MALEBOTHELP---------
+
         COMMANDS (case sensitive):
+        
 Join    |    (aliases: 'getoverhere', 'join', 'c')
 Connects the bot to the voice channel the author is connected to.
 ---
