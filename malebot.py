@@ -46,6 +46,8 @@ def getVoiceClient(guildid):
 
 #disconnect from a guild    
 async def disconnectGuild(guild):
+    if not is_connected(guild):
+        return
     getVoiceClient(guild.id).stop()
     await getVoiceClient(guild.id).disconnect()
     await asyncio.sleep(1)
@@ -146,35 +148,56 @@ async def deactivate(ctx):
         if getVoiceClient(ctx.guild.id) != None:
             if getVoiceClient(ctx.guild.id).is_playing or getVoiceClient(ctx.guild.id).is_paused:
                 getVoiceClient(ctx.guild.id).stop()
-                shuffle_loop.cancel()
+                guildstates[ctx.guild.id].is_shuffling = False
   
 @client.command(aliases=['sk'])
 async def skip(ctx):
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+        
     getVoiceClient(ctx.guild.id).stop()
  
 @client.command(aliases=['p'])
 async def pause(ctx):
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+        
     if not getVoiceClient(ctx.guild.id).is_paused():
         getVoiceClient(ctx.guild.id).pause() 
         
 @client.command(aliases=['r'])
 async def resume(ctx):
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+        
     if getVoiceClient(ctx.guild.id).is_paused():
         getVoiceClient(ctx.guild.id).resume()      
 
 @client.command(aliases=['LOUDER', 'v'])
 async def volume(ctx, arg):
-    try:
-        floatvol = round(float(arg), 2)
-        if floatvol > 0 and floatvol <= 1.0:
-            getVoiceClient(ctx.guild.id).source.volume = floatvol
-        else:
-            await ctx.send("♂FUCK♂YOU♂ (use a decimal number 0.01 to 1.00)")
-    except:
-        await ctx.send("♂FUCK♂YOU♂ (use a decimal number 0.01 to 1.00 and make sure the bot is connected and playing)")
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+    
+    if getVoiceClient(ctx.guild.id).is_playing or getVoiceClient(ctx.guild.id).is_paused:
+        try:
+            floatvol = round(float(arg), 2)
+            if floatvol > 0 and floatvol <= 1.0:
+                getVoiceClient(ctx.guild.id).source.volume = floatvol
+            else:
+                await ctx.send("♂FUCK♂YOU♂ (use a decimal number 0.01 to 1.00)")
+        except:
+            await ctx.send("♂FUCK♂YOU♂ (use a decimal number 0.01 to 1.00 and make sure the bot is connected and playing)")
         
 @client.command(aliases=['twoplay', 're'])
 async def replay(ctx):
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+        
     if guildstates[ctx.guild.id].now_playing != None:
         getVoiceClient(ctx.guild.id).stop()
         guildstates[ctx.guild.id].timestamp = int(time.time())
@@ -186,6 +209,10 @@ async def replay(ctx):
 
 @client.command(aliases=['se'])
 async def seek(ctx, *args):
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+        
     if len(args) == 0:
         await ctx.send("♂ENTER♂A♂TIMESTAMP♂IN♂SECONDS♂")
         return
@@ -232,6 +259,7 @@ async def fuzzy(ctx, *args):
             match = i
             
     if match:
+        guildstates[ctx.guild.id].is_shuffling = False
         guildstates[ctx.guild.id].now_playing = match
         guildstates[ctx.guild.id].timestamp = int(time.time())
         getVoiceClient(ctx.guild.id).stop()
@@ -258,6 +286,7 @@ async def keyword(ctx, *args):
             matches.append(i)
     
     if len(matches) == 1:
+        guildstates[ctx.guild.id].is_shuffling = False
         guildstates[ctx.guild.id].now_playing = matches[0]
         guildstates[ctx.guild.id].timestamp = int(time.time())
         getVoiceClient(ctx.guild.id).stop()
@@ -270,7 +299,7 @@ async def keyword(ctx, *args):
         for i in matches:
             outstr += str(count)+"\t|\t"+i+"\n"
             count += 1
-        if len(outstr) > 3999:
+        if len(outstr) > 1999:
             await ctx.send("♂TOO♂MANY♂MATCHES♂TO♂DISPLAY♂")
         else:
             await ctx.send(outstr)
@@ -294,17 +323,16 @@ async def help(ctx):
     "**Fuzzy**\t|\t(aliases: 'fuzzy', 'f')\nDoes a simple fuzzy search for the argument in quotes.\n\-\-\-\n"\
     "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\nSearches for matches containing all keywords.\n\-\-\-\n")
 
-#add start and stop shuffle loop, isconnected where missing in all routines
-#will duplicate this bg task for queues
-#force disconnected logic
-    
-#intents/perms issues, isconnected/isnotconnected in all routines where missing
-#comments, readme format, remove extra debug prints
-
+'''PRIORITY'''
+#test everything while connected and not connected to make sure no errors are thrown  
+#intents/perms issues
+#comments, readme format, remove extra debug prints, update needed ones with more log info (mainly in loops)
+'''QUEUEING'''
+#new background task similar to shuffle loop for queues
 #searches add to bottom of queue and cancel shuffle loop, start queue loop if wasnt already
 #show queue, delete from queue, move x to y position, clear
-
-#maybe, store volume preferences/history in db, display history
+'''MAYBE'''
+#store volume preferences/history in db, display history
 
 with open('key.txt', 'r') as keyfile:
     client.run(keyfile.read())
