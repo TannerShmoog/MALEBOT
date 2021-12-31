@@ -3,7 +3,23 @@ A simple discord music bot to stream from a local library of files
 
 
 __MALE BOT HELP__
-COMMANDS (case sensitive):
+__REQUIREMENTS__
+
+Python Libraries: discord.py
+
+Binaries: ffmpeg.exe, ffprobe.exe
+
+
+__SETUP__
+
+Create 'songdir.txt', and enter a windows URL pointing to the directory containing your music files.
+
+Create 'key.txt', and enter your bot's authentication key from the discord developer portal.
+
+Place these files in the same directory as the bot.
+
+
+__COMMANDS (case sensitive)__
         
 Join    |    (aliases: 'getoverhere', 'join', 'c')
 Connects the bot to the voice channel the author is connected to.
