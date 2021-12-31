@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord.ext import tasks
 from strikeamatch import matchCompare
 from queueclass import musicQueue
+from statecontainer import guildStateContainer
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -18,6 +19,7 @@ client.remove_command('help')
 global songitems
 global songhist
 global timestamp
+
 #store the voice client and some variables per guild
 songhist = {}
 timestamp = {}
@@ -278,6 +280,7 @@ async def help(ctx):
 #timestamp, nowplaying, isqueueing, isshuffling all into 1 object to keep track of state
 #change shuffletask to run on start, and loop through all guilds to see if they are shuffling, then add all shuffling logic as needed
 #intents/perms issues, isconnected/isnotconnected in all routines
+#comments, readme format
 
 #searches add to bottom of queue and cancel shuffle loop, start queue loop if wasnt already
 #show queue, delete from queue, move x to y position, clear
