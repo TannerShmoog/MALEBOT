@@ -1,4 +1,4 @@
-import discord, os, random, re, time, subprocess, asyncio
+import discord, os, random, re, time, subprocess, asyncio, datetime
 from discord.ext import commands
 from discord.ext import tasks
 from strikeamatch import matchCompare
@@ -25,6 +25,13 @@ with open('songdir.txt', 'r') as songfile:
     songdir = songfile.read()
 songitems = os.listdir(songdir)
 
+#convert time in seconds to a hh:mm:ss string
+def timetostr(seconds):
+    outstr = str(datetime.timedelta(seconds=seconds)).split('.')[0]
+    if outstr.split(':')[0] == '0':
+        return outstr[2:]
+    return outstr
+    
 #simple check to see if the bot is in a voice channel
 def is_connected(guild):
     voice = discord.utils.get(client.voice_clients, guild=guild)
@@ -206,7 +213,7 @@ async def nowplaying(ctx):
         duration = int(float(stringduration.strip().decode("utf-8")))
         currenttime = time.time() - guildstates[ctx.guild.id].timestamp
         filled = int((currenttime/duration)*25)
-        await ctx.send("**♂NOW♂PLAYING♂:** "+guildstates[ctx.guild.id].now_playing+"\n```▶️"+"="*filled+"-"*(25-filled)+"🔊```")
+        await ctx.send("**♂NOW♂PLAYING♂:** "+guildstates[ctx.guild.id].now_playing+"\n```"+timetostr(currenttime)+" | ▶️"+"="*filled+"-"*(25-filled)+"🔊 | "+timetostr(duration)+"```")
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")        
 
@@ -287,9 +294,10 @@ async def help(ctx):
     "**Fuzzy**\t|\t(aliases: 'fuzzy', 'f')\nDoes a simple fuzzy search for the argument in quotes.\n\-\-\-\n"\
     "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\nSearches for matches containing all keywords.\n\-\-\-\n")
 
-    #add start and stop shuffle loop, isconnected where missing in all routines
-    #will duplicate this bg task for queues
-#TODO TIMES ON NP BAR
+#add start and stop shuffle loop, isconnected where missing in all routines
+#will duplicate this bg task for queues
+#force disconnected logic
+    
 #intents/perms issues, isconnected/isnotconnected in all routines where missing
 #comments, readme format, remove extra debug prints
 
