@@ -26,8 +26,8 @@ with open('songdir.txt', 'r') as songfile:
 songitems = os.listdir(songdir)
 
 #simple check to see if the bot is in a voice channel
-def is_connected(ctx):
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+def is_connected(guild):
+    voice = discord.utils.get(client.voice_clients, guild=guild)
     return voice
 
 #find a voice client by guild id, or return false if not found
@@ -57,8 +57,8 @@ async def connectGuild(ctx):
     #populate dictionaries if needed
     if not ctx.guild.id in guildstates.keys():
         guildstates[ctx.guild.id] = guildStateContainer() 
-        guildstates[ctx.guild.id].guildid = ctx.guild.id
-        
+        guildstates[ctx.guild.id].id = ctx.guild.id
+        guildstates[ctx.guild.id].init_channel = ctx
         
 #disconnect if alone in the channel
 @client.event
@@ -86,44 +86,56 @@ async def on_voice_state_update(member, before, after):
 async def on_ready():
     print('Logged in as {0.user}'.format(client))
     await client.change_presence(activity=discord.Game(name="try .help"))
+    if not shuffle_loop.is_running():
+        shuffle_loop.start()
 
 @client.command(aliases=['getoverhere', 'c'])
 #connect the bot to a voice channel
 async def join(ctx):
-    if not is_connected(ctx):
+    if not is_connected(ctx.guild):
         await connectGuild(ctx)
     
 @client.command(aliases=['fuckyou', 'dc'])
 async def leave(ctx):
-    if is_connected(ctx):
+    if is_connected(ctx.guild):
         await disconnectGuild(ctx.guild)
 
 @tasks.loop(seconds=1)
 #loop task for playing random songs until cancelled
-async def shuffle_loop(ctx):
-    if getVoiceClient(ctx.guild.id):
-        if getVoiceClient(ctx.guild.id).is_playing() != None:
-            print(1)
-            if not getVoiceClient(ctx.guild.id).is_playing() and not getVoiceClient(ctx.guild.id).is_paused():
-                print(2)
-                songchoice = random.choice(songitems)
-                guildstates[ctx.guild.id].now_playing = songchoice
-                guildstates[ctx.guild.id].timestamp = int(time.time())
-                getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+songchoice), after=lambda e: print(songchoice, ctx.guild))
-                getVoiceClient(ctx.guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(ctx.guild.id).source)
-                await ctx.send("**♂NOW♂PLAYING♂:** "+songchoice)
+async def shuffle_loop():
+    print(guildstates.keys())
+    remove = []
+    for key in guildstates.keys():
+        guild = guildstates[key]
+        if not is_connected(client.get_guild(guild.id)):
+            remove.append(key)
+        else:
+            if getVoiceClient(guild.id) and guild.is_shuffling:
+                if getVoiceClient(guild.id).is_playing() != None:
+                    print(1)
+                    if not getVoiceClient(guild.id).is_playing() and not getVoiceClient(guild.id).is_paused():
+                        print(2)
+                        songchoice = random.choice(songitems)
+                        guildstates[guild.id].now_playing = songchoice
+                        guildstates[guild.id].timestamp = int(time.time())
+                        getVoiceClient(guild.id).play(discord.FFmpegPCMAudio(songdir+songchoice), after=lambda e: print(songchoice, guild))
+                        getVoiceClient(guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(guild.id).source)
+                        await guildstates[guild.id].init_channel.send("**♂NOW♂PLAYING♂:** "+songchoice)
+    
+    for key in remove:
+        guildstates.pop(key)
         
 @client.command(aliases=['shuffle', 's'])
 async def randomplay(ctx):    
-    if not is_connected(ctx):     
+    if not is_connected(ctx.guild):     
         await connectGuild(ctx)
+    guildstates[ctx.guild.id].is_shuffling = True
         
-    if not shuffle_loop.is_running():
-        shuffle_loop.start(ctx)
+    
        
 @client.command(aliases=['stop', 'st'])
 async def deactivate(ctx):
-    if is_connected(ctx):
+    if is_connected(ctx.guild):
         if getVoiceClient(ctx.guild.id) != None:
             if getVoiceClient(ctx.guild.id).is_playing or getVoiceClient(ctx.guild.id).is_paused:
                 getVoiceClient(ctx.guild.id).stop()
@@ -200,7 +212,7 @@ async def nowplaying(ctx):
 
 @client.command(aliases=['f'])
 async def fuzzy(ctx, *args):
-    if not is_connected(ctx):
+    if not is_connected(ctx.guild):
         await connectGuild(ctx)
     
     keywords = " ".join(args[:]).lower()
@@ -222,7 +234,7 @@ async def fuzzy(ctx, *args):
 
 @client.command(aliases=['key'])
 async def keyword(ctx, *args):
-    if not is_connected(ctx):
+    if not is_connected(ctx.guild):
         await connectGuild(ctx)
             
     keywords = " ".join(args[:]).lower().split(' ')
@@ -275,10 +287,9 @@ async def help(ctx):
     "**Fuzzy**\t|\t(aliases: 'fuzzy', 'f')\nDoes a simple fuzzy search for the argument in quotes.\n\-\-\-\n"\
     "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\nSearches for matches containing all keywords.\n\-\-\-\n")
 
-#change shuffletask to run on start(remove all other starts/cancels), and loop through all guilds with states to see if they are shuffling, 
-    #check to see if there are any states for guilds which return false is_connected and clean them up
-    #then add all shuffling logic as needed
+    #add start and stop shuffle loop, isconnected where missing in all routines
     #will duplicate this bg task for queues
+#TODO TIMES ON NP BAR
 #intents/perms issues, isconnected/isnotconnected in all routines where missing
 #comments, readme format, remove extra debug prints
 
