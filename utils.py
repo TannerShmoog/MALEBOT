@@ -1,4 +1,11 @@
+import datetime 
 
+#convert time in seconds to a hh:mm:ss string
+def timetostr(seconds):
+    outstr = str(datetime.timedelta(seconds=seconds)).split('.')[0]
+    if outstr.split(':')[0] == '0':
+        return outstr[2:]
+    return outstr
 
 
 def letterPairs(string):

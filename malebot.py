@@ -1,7 +1,7 @@
-import discord, os, random, re, time, subprocess, asyncio, datetime
+import discord, os, random, re, time, subprocess, asyncio
 from discord.ext import commands
 from discord.ext import tasks
-from strikeamatch import matchCompare
+from utils import *
 from queueclass import musicQueue
 from statecontainer import guildStateContainer
 
@@ -26,12 +26,7 @@ with open('songdir.txt', 'r') as songfile:
     songdir = songfile.read()
 songitems = os.listdir(songdir)
 
-#convert time in seconds to a hh:mm:ss string
-def timetostr(seconds):
-    outstr = str(datetime.timedelta(seconds=seconds)).split('.')[0]
-    if outstr.split(':')[0] == '0':
-        return outstr[2:]
-    return outstr
+
     
 #simple check to see if the bot is in a voice channel
 def is_connected(guild):
@@ -68,7 +63,7 @@ async def disconnectGuild(guild):
     await asyncio.sleep(1)
     if guild.id in guildstates.keys():
         guildstates.pop(guild.id)
-    print("DISCONNECTED:\t"+guild.id)
+    print("DISCONNECTED:\t"+str(guild.id))
     
 #connect to a guild
 async def connectGuild(ctx):
@@ -84,7 +79,7 @@ async def connectGuild(ctx):
         guildstates[ctx.guild.id] = guildStateContainer() 
         guildstates[ctx.guild.id].id = ctx.guild.id
         guildstates[ctx.guild.id].init_channel = ctx
-    print("CONNECTED:\t"+ctx.guild.id)
+    print("CONNECTED:\t"+str(ctx.guild.id))
     
 #disconnect if alone in the channel
 @client.event
