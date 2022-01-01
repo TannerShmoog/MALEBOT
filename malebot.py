@@ -17,6 +17,7 @@ client.remove_command('help')
 
 
 global songitems
+global songdir
 global guildstates
 #initialize a dictionary to store state for each guild
 guildstates = {}
@@ -43,6 +44,14 @@ def getVoiceClient(guildid):
         if i.guild.id == guildid:
             return i
     return None
+    
+def playSong(guildid, song, timestamp, stopflag=False)
+    guildstates[guildid].now_playing = song
+    guildstates[guildid].timestamp = timestamp
+    if stopflag:
+        getVoiceClient(guildid).stop()
+    getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song), after=lambda e: print(song, guildid))
+    getVoiceClient(guildid).source = discord.PCMVolumeTransformer(getVoiceClient(guildid).source)
 
 #disconnect from a guild    
 async def disconnectGuild(guild):
@@ -112,7 +121,6 @@ async def leave(ctx):
 @tasks.loop(seconds=1)
 #loop task for playing random songs until cancelled
 async def shuffle_loop():
-    print(guildstates.keys())
     remove = []
     for key in guildstates.keys():
         guild = guildstates[key]
@@ -121,13 +129,11 @@ async def shuffle_loop():
         else:
             if getVoiceClient(guild.id) and guild.is_shuffling:
                 if getVoiceClient(guild.id).is_playing() != None:
-                    print(1)
                     if not getVoiceClient(guild.id).is_playing() and not getVoiceClient(guild.id).is_paused():
-                        print(2)
                         songchoice = random.choice(songitems)
                         guildstates[guild.id].now_playing = songchoice
                         guildstates[guild.id].timestamp = int(time.time())
-                        getVoiceClient(guild.id).play(discord.FFmpegPCMAudio(songdir+songchoice), after=lambda e: print(songchoice, guild))
+                        getVoiceClient(guild.id).play(discord.FFmpegPCMAudio(songdir+songchoice), after=lambda e: print(songchoice, guild.id))
                         getVoiceClient(guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(guild.id).source)
                         await guildstates[guild.id].init_channel.send("**♂NOW♂PLAYING♂:** "+songchoice)
     
@@ -201,7 +207,7 @@ async def replay(ctx):
     if guildstates[ctx.guild.id].now_playing != None:
         getVoiceClient(ctx.guild.id).stop()
         guildstates[ctx.guild.id].timestamp = int(time.time())
-        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+guildstates[ctx.guild.id].now_playing), after=lambda e: print(guildstates[ctx.guild.id].now_playing, ctx.guild))
+        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+guildstates[ctx.guild.id].now_playing), after=lambda e: print(guildstates[ctx.guild.id].now_playing, ctx.guild.id))
         getVoiceClient(ctx.guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(ctx.guild.id).source)
         await ctx.send("**♂NOW♂PLAYING♂:** "+guildstates[ctx.guild.id].now_playing)
     else:
@@ -227,14 +233,18 @@ async def seek(ctx, *args):
     if guildstates[ctx.guild.id].now_playing != None:
         getVoiceClient(ctx.guild.id).stop()
         guildstates[ctx.guild.id].timestamp = int(time.time())-int(args[0])
-        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+guildstates[ctx.guild.id].now_playing, before_options="-ss "+args[0]), after=lambda e: print(guildstates[ctx.guild.id].now_playing, ctx.guild))
+        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+guildstates[ctx.guild.id].now_playing, before_options="-ss "+args[0]), after=lambda e: print(guildstates[ctx.guild.id].now_playing, ctx.guild.id))
         getVoiceClient(ctx.guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(ctx.guild.id).source)
         await ctx.send("**♂SEEKING♂TO♂:** "+args[0]+" SECONDS♂")
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")
 
 @client.command(aliases=['np'])
-async def nowplaying(ctx): 
+async def nowplaying(ctx):
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+        
     if guildstates[ctx.guild.id].now_playing != None and guildstates[ctx.guild.id].timestamp != None:
         stringduration = subprocess.check_output(['ffprobe', '-show_entries', 'format=duration', '-v', 'quiet', '-of', 'csv=%s' % ("p=0"), songdir+guildstates[ctx.guild.id].now_playing])
         duration = int(float(stringduration.strip().decode("utf-8")))
@@ -263,7 +273,7 @@ async def fuzzy(ctx, *args):
         guildstates[ctx.guild.id].now_playing = match
         guildstates[ctx.guild.id].timestamp = int(time.time())
         getVoiceClient(ctx.guild.id).stop()
-        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+match), after=lambda e: print(match, ctx.guild))
+        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+match), after=lambda e: print(match, ctx.guild.id))
         getVoiceClient(ctx.guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(ctx.guild.id).source)
         await ctx.send("**♂NOW♂PLAYING♂:** "+match)
 
@@ -290,7 +300,7 @@ async def keyword(ctx, *args):
         guildstates[ctx.guild.id].now_playing = matches[0]
         guildstates[ctx.guild.id].timestamp = int(time.time())
         getVoiceClient(ctx.guild.id).stop()
-        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+matches[0]), after=lambda e: print(matches[0], ctx.guild))
+        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+matches[0]), after=lambda e: print(matches[0], ctx.guild.id))
         getVoiceClient(ctx.guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(ctx.guild.id).source)
         await ctx.send("**♂NOW♂PLAYING♂:** "+matches[0])
     elif len(matches) > 1:
@@ -324,8 +334,7 @@ async def help(ctx):
     "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\nSearches for matches containing all keywords.\n\-\-\-\n")
 
 '''PRIORITY'''
-#test everything while connected and not connected to make sure no errors are thrown  
-#intents/perms issues
+#refactor set shuffle/set queue/etc into seperate functions to make keeping state easier
 #comments, readme format, remove extra debug prints, update needed ones with more log info (mainly in loops)
 '''QUEUEING'''
 #new background task similar to shuffle loop for queues
@@ -333,6 +342,8 @@ async def help(ctx):
 #show queue, delete from queue, move x to y position, clear
 '''MAYBE'''
 #store volume preferences/history in db, display history
+#deepfry/turbo volume function
+#allow multiple songs directories, youtube/other streaming
 
 with open('key.txt', 'r') as keyfile:
     client.run(keyfile.read())
