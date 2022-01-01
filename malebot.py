@@ -45,12 +45,17 @@ def getVoiceClient(guildid):
             return i
     return None
     
-def playSong(guildid, song, timestamp, stopflag=False)
+def playSong(guildid, song, timestamp, stopflag=False, ffmpegoptions=None):
     guildstates[guildid].now_playing = song
     guildstates[guildid].timestamp = timestamp
     if stopflag:
         getVoiceClient(guildid).stop()
-    getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song), after=lambda e: print(song, guildid))
+        
+    if ffmpegoptions == None:
+        getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song), after=lambda e: print(song, guildid))
+    #special case for seek, but accepts any ffmpeg before_options
+    else:
+        getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song, before_options=ffmpegoptions), after=lambda e: print(song, guildid))
     getVoiceClient(guildid).source = discord.PCMVolumeTransformer(getVoiceClient(guildid).source)
 
 #disconnect from a guild    
@@ -131,10 +136,7 @@ async def shuffle_loop():
                 if getVoiceClient(guild.id).is_playing() != None:
                     if not getVoiceClient(guild.id).is_playing() and not getVoiceClient(guild.id).is_paused():
                         songchoice = random.choice(songitems)
-                        guildstates[guild.id].now_playing = songchoice
-                        guildstates[guild.id].timestamp = int(time.time())
-                        getVoiceClient(guild.id).play(discord.FFmpegPCMAudio(songdir+songchoice), after=lambda e: print(songchoice, guild.id))
-                        getVoiceClient(guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(guild.id).source)
+                        playSong(guild.id, songchoice, int(time.time()))
                         await guildstates[guild.id].init_channel.send("**♂NOW♂PLAYING♂:** "+songchoice)
     
     for key in remove:
@@ -205,10 +207,7 @@ async def replay(ctx):
         return
         
     if guildstates[ctx.guild.id].now_playing != None:
-        getVoiceClient(ctx.guild.id).stop()
-        guildstates[ctx.guild.id].timestamp = int(time.time())
-        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+guildstates[ctx.guild.id].now_playing), after=lambda e: print(guildstates[ctx.guild.id].now_playing, ctx.guild.id))
-        getVoiceClient(ctx.guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(ctx.guild.id).source)
+        playSong(ctx.guild.id, guildstates[ctx.guild.id].now_playing, int(time.time()), stopflag=True)
         await ctx.send("**♂NOW♂PLAYING♂:** "+guildstates[ctx.guild.id].now_playing)
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")
@@ -231,10 +230,7 @@ async def seek(ctx, *args):
         return
     
     if guildstates[ctx.guild.id].now_playing != None:
-        getVoiceClient(ctx.guild.id).stop()
-        guildstates[ctx.guild.id].timestamp = int(time.time())-int(args[0])
-        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+guildstates[ctx.guild.id].now_playing, before_options="-ss "+args[0]), after=lambda e: print(guildstates[ctx.guild.id].now_playing, ctx.guild.id))
-        getVoiceClient(ctx.guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(ctx.guild.id).source)
+        playSong(ctx.guild.id, guildstates[ctx.guild.id].now_playing, int(time.time())-int(args[0]), stopflag=True, ffmpegoptions="-ss "+args[0])
         await ctx.send("**♂SEEKING♂TO♂:** "+args[0]+" SECONDS♂")
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")
@@ -270,11 +266,7 @@ async def fuzzy(ctx, *args):
             
     if match:
         guildstates[ctx.guild.id].is_shuffling = False
-        guildstates[ctx.guild.id].now_playing = match
-        guildstates[ctx.guild.id].timestamp = int(time.time())
-        getVoiceClient(ctx.guild.id).stop()
-        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+match), after=lambda e: print(match, ctx.guild.id))
-        getVoiceClient(ctx.guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(ctx.guild.id).source)
+        playSong(ctx.guild.id, match, int(time.time()), stopflag=True)
         await ctx.send("**♂NOW♂PLAYING♂:** "+match)
 
 @client.command(aliases=['key'])
@@ -297,11 +289,7 @@ async def keyword(ctx, *args):
     
     if len(matches) == 1:
         guildstates[ctx.guild.id].is_shuffling = False
-        guildstates[ctx.guild.id].now_playing = matches[0]
-        guildstates[ctx.guild.id].timestamp = int(time.time())
-        getVoiceClient(ctx.guild.id).stop()
-        getVoiceClient(ctx.guild.id).play(discord.FFmpegPCMAudio(songdir+matches[0]), after=lambda e: print(matches[0], ctx.guild.id))
-        getVoiceClient(ctx.guild.id).source = discord.PCMVolumeTransformer(getVoiceClient(ctx.guild.id).source)
+        playSong(ctx.guild.id, matches[0], int(time.time()), stopflag=True)
         await ctx.send("**♂NOW♂PLAYING♂:** "+matches[0])
     elif len(matches) > 1:
         outstr = "♂MULTIPLE♂MATCHES♂FOUND♂:\n"
