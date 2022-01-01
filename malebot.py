@@ -51,11 +51,12 @@ def playSong(guildid, song, timestamp, stopflag=False, ffmpegoptions=None):
     if stopflag:
         getVoiceClient(guildid).stop()
         
+    print("NP:\t"+song+"\t|\t"+str(guildid))
     if ffmpegoptions == None:
-        getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song), after=lambda e: print(song, guildid))
+        getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song), after=lambda e: print("FINISHED:\t"+str(guildid)))
     #special case for seek, but accepts any ffmpeg before_options
     else:
-        getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song, before_options=ffmpegoptions), after=lambda e: print(song, guildid))
+        getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song, before_options=ffmpegoptions), after=lambda e: print("FINISHED:\t"+str(guildid)))
     getVoiceClient(guildid).source = discord.PCMVolumeTransformer(getVoiceClient(guildid).source)
 
 #disconnect from a guild    
@@ -67,7 +68,8 @@ async def disconnectGuild(guild):
     await asyncio.sleep(1)
     if guild.id in guildstates.keys():
         guildstates.pop(guild.id)
-
+    print("DISCONNECTED:\t"+guild.id)
+    
 #connect to a guild
 async def connectGuild(ctx):
     connected = ctx.author.voice
@@ -82,7 +84,8 @@ async def connectGuild(ctx):
         guildstates[ctx.guild.id] = guildStateContainer() 
         guildstates[ctx.guild.id].id = ctx.guild.id
         guildstates[ctx.guild.id].init_channel = ctx
-        
+    print("CONNECTED:\t"+ctx.guild.id)
+    
 #disconnect if alone in the channel
 @client.event
 async def on_voice_state_update(member, before, after):
@@ -147,9 +150,7 @@ async def randomplay(ctx):
     if not is_connected(ctx.guild):     
         await connectGuild(ctx)
     guildstates[ctx.guild.id].is_shuffling = True
-        
-    
-       
+               
 @client.command(aliases=['stop', 'st'])
 async def deactivate(ctx):
     if is_connected(ctx.guild):
@@ -162,8 +163,7 @@ async def deactivate(ctx):
 async def skip(ctx):
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
-        return
-        
+        return      
     getVoiceClient(ctx.guild.id).stop()
  
 @client.command(aliases=['p'])
@@ -322,8 +322,7 @@ async def help(ctx):
     "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\nSearches for matches containing all keywords.\n\-\-\-\n")
 
 '''PRIORITY'''
-#refactor set shuffle/set queue/etc into seperate functions to make keeping state easier
-#comments, readme format, remove extra debug prints, update needed ones with more log info (mainly in loops)
+#comments, readme format
 '''QUEUEING'''
 #new background task similar to shuffle loop for queues
 #searches add to bottom of queue and cancel shuffle loop, start queue loop if wasnt already
@@ -331,7 +330,7 @@ async def help(ctx):
 '''MAYBE'''
 #store volume preferences/history in db, display history
 #deepfry/turbo volume function
-#allow multiple songs directories, youtube/other streaming
+#allow multiple songs directories, youtube/other streaming ---> refactor set shuffle/set queue/etc into seperate functions to make keeping state easier?
 
 with open('key.txt', 'r') as keyfile:
     client.run(keyfile.read())
