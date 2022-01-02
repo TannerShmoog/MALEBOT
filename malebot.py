@@ -344,19 +344,6 @@ async def help(ctx):
     "**Fuzzy**\t|\t(aliases: 'fuzzy', 'f')\nDoes a simple fuzzy search for the argument in quotes.\n\-\-\-\n"\
     "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\nSearches for matches containing all keywords.\n\-\-\-\n")
 
-'''PRIORITY'''
-#comments, readme format
-#deepfry/turbo volume function
-#magnitude as optional user argument
-#quiet flags in distort_audio for subprocesses
-#store guildstate np file and title seperately, flag in playsong to not set title for distort
-'''QUEUEING'''
-#new background task similar to shuffle loop for queues
-#searches add to bottom of queue and cancel shuffle loop, start queue loop if wasnt already
-#show queue, delete from queue, move x to y position, clear
-'''MAYBE'''
-#store volume preferences/history in db, display history
-#allow multiple songs directories, youtube/other streaming ---> refactor set shuffle/set queue/etc into seperate functions to make keeping state easier?
 
 with open('key.txt', 'r') as keyfile:
     client.run(keyfile.read())
