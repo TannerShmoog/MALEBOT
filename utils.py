@@ -8,7 +8,8 @@ def timetostr(seconds):
     return outstr
 
 def distort_audio(inputpath, outputdir, magnitude, guildid):  
-    subprocess.run(['ffmpeg', '-y', '-i', inputpath, outputdir+"___"+str(guildid)+'temp.wav', '-loglevel', 'quiet'])
+    subprocess.run(['ffmpeg', '-y', '-i', inputpath, outputdir+"___"+str(guildid)+'-temp.wav', '-loglevel', 'quiet'])
+    output_file = "___1-"+str(guildid)+"-temp.wav"
     tfm = sox.Transformer()
     tfm.norm(-1.0)
     tfm.bass(magnitude)
@@ -18,7 +19,8 @@ def distort_audio(inputpath, outputdir, magnitude, guildid):
     startgain = 6.0
     tfm.gain(32.0, normalize=False)
     tfm.compand()
-    tfm.build(outputdir+"___"+str(guildid)+'temp.wav', outputdir+"___"+str(guildid)+"temp1.wav")
+    tfm.build(outputdir+"___"+str(guildid)+'-temp.wav', outputdir+output_file)
+    return output_file
 
 def letterPairs(string):
     numPairs = len(string)-1 

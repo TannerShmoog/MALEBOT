@@ -138,7 +138,9 @@ async def shuffle_loop():
             if getVoiceClient(guild.id) and guild.is_shuffling:
                 if getVoiceClient(guild.id).is_playing() != None:
                     if not getVoiceClient(guild.id).is_playing() and not getVoiceClient(guild.id).is_paused():
-                        songchoice = random.choice(songitems)
+                        songchoice = ''
+                        while songchoice == '' or songchoice[-8:] == 'temp.wav':
+                            songchoice = random.choice(songitems)
                         playSong(guild.id, songchoice, int(time.time()))
                         await guildstates[guild.id].init_channel.send("**♂NOW♂PLAYING♂:** "+guildstates[guild.id].title)
     
@@ -268,9 +270,9 @@ async def distort(ctx, *args):
         return
     '''
     if guildstates[ctx.guild.id].now_playing != None:
-        distort_audio(songdir+guildstates[ctx.guild.id].now_playing, songdir, 15, ctx.guild.id)
+        distorted_file = distort_audio(songdir+guildstates[ctx.guild.id].now_playing, songdir, 15, ctx.guild.id)
         currenttime = int(time.time() - guildstates[ctx.guild.id].timestamp)
-        playSong(ctx.guild.id, "___"+str(ctx.guild.id)+"temp1.wav", int(time.time())-currenttime, stopflag=True, ffmpegoptions="-ss "+str(currenttime), settitle=False)
+        playSong(ctx.guild.id, distorted_file, int(time.time())-currenttime, stopflag=True, ffmpegoptions="-ss "+str(currenttime), settitle=False)
         await ctx.send("**♂LOUDER♂SIR♂** ")
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")
