@@ -27,7 +27,7 @@ with open('songdir.txt', 'r') as songfile:
 songitems = os.listdir(songdir)
 
 
-    
+'''HELPER FUNCTIONS'''    
 #simple check to see if the bot is in a voice channel
 def is_connected(guild):
     voice = discord.utils.get(client.voice_clients, guild=guild)
@@ -47,6 +47,7 @@ def playSong(guildid, song, timestamp, stopflag=False, ffmpegoptions=None):
         getVoiceClient(guildid).stop()
         
     print("NP:\t"+song+"\t|\t"+str(guildid))
+        
     if ffmpegoptions == None:
         getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song), after=lambda e: print("FINISHED:\t"+str(guildid)))
     #special case for seek, but accepts any ffmpeg before_options
@@ -80,7 +81,8 @@ async def connectGuild(ctx):
         guildstates[ctx.guild.id].id = ctx.guild.id
         guildstates[ctx.guild.id].init_channel = ctx
     print("CONNECTED:\t"+str(ctx.guild.id))
-    
+
+'''EVENT HANDLERS'''    
 #disconnect if alone in the channel
 @client.event
 async def on_voice_state_update(member, before, after):
@@ -110,6 +112,7 @@ async def on_ready():
     if not shuffle_loop.is_running():
         shuffle_loop.start()
 
+'''COMMAND HANDLERS'''
 @client.command(aliases=['getoverhere', 'c'])
 #connect the bot to a voice channel
 async def join(ctx):
@@ -179,7 +182,7 @@ async def resume(ctx):
     if getVoiceClient(ctx.guild.id).is_paused():
         getVoiceClient(ctx.guild.id).resume()      
 
-@client.command(aliases=['LOUDER', 'v'])
+@client.command(aliases=['v'])
 async def volume(ctx, arg):
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
@@ -195,7 +198,7 @@ async def volume(ctx, arg):
         except:
             await ctx.send("♂FUCK♂YOU♂ (use a decimal number 0.01 to 1.00 and make sure the bot is connected and playing)")
         
-@client.command(aliases=['twoplay', 're'])
+@client.command(aliases=['re'])
 async def replay(ctx):
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
@@ -245,6 +248,31 @@ async def nowplaying(ctx):
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")        
 
+@client.command(aliases=['LOUDER'])
+async def distort(ctx, *args):
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+    '''TODO: TAKE MAGNITUDE AS ARGUMENT 
+    if len(args) == 0:
+        await ctx.send("♂ENTER♂A♂TIMESTAMP♂IN♂SECONDS♂")
+        return
+    try:
+        test = int(args[0])
+        if test <= 0:
+            raise ValueError
+    except:
+        await ctx.send("♂TIMESTAMP♂MUST♂BE♂A♂POSITIVE♂INTEGER♂")
+        return
+    '''
+    if guildstates[ctx.guild.id].now_playing != None:
+        distort_audio(songdir+guildstates[ctx.guild.id].now_playing, songdir, 15, ctx.guild.id)
+        currenttime = int(time.time() - guildstates[ctx.guild.id].timestamp)
+        playSong(ctx.guild.id, "___"+str(ctx.guild.id)+"temp1.wav", int(time.time())-currenttime, stopflag=True, ffmpegoptions="-ss "+str(currenttime))
+        await ctx.send("**♂LOUDER♂SIR♂** ")
+    else:
+        await ctx.send("♂NOTHING♂PLAYING♂")
+        
 @client.command(aliases=['f'])
 async def fuzzy(ctx, *args):
     if not is_connected(ctx.guild):
@@ -309,22 +337,25 @@ async def help(ctx):
     "**Skip**\t|\t(aliases: 'skip', 'sk')\nSkips the current song and picks a new random one.\n\-\-\-\n"\
     "**Pause**\t|\t(aliases: 'pause', 'p')\nPauses the currently playing song.\n\-\-\-\n"\
     "**Resume**\t|\t(aliases: 'resume', 'r')\nResumes the currently playing song.\n\-\-\-\n"\
-    "**Volume**\t|\t(aliases: 'LOUDER', 'volume', 'v')\nSets the volume to a decimal value 0.01 to 1.00.\n\-\-\-\n"\
+    "**Volume**\t|\t(aliases: 'volume', 'v')\nSets the volume to a decimal value 0.01 to 1.00.\n\-\-\-\n"\
     "**Seek**\t|\t(aliases: 'seek', 'se')\nSeek to time given an integer value in seconds.\n\-\-\-\n"\
     "**Now Playing**\t|\t(aliases: 'nowplaying', 'np')\nShow a progress bar for the current song.\n\-\-\-\n"\
-    "**Replay**\t|\t(aliases: 'twoplay', 'replay', 're')\nReplays current song.\n\-\-\-\n"\
+    "**Replay**\t|\t(aliases: 'replay', 're')\nReplays current song.\n\-\-\-\n"\
     "**Fuzzy**\t|\t(aliases: 'fuzzy', 'f')\nDoes a simple fuzzy search for the argument in quotes.\n\-\-\-\n"\
     "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\nSearches for matches containing all keywords.\n\-\-\-\n")
 
 '''PRIORITY'''
 #comments, readme format
+#deepfry/turbo volume function
+#magnitude as optional user argument
+#quiet flags in distort_audio for subprocesses
+#store guildstate np file and title seperately, flag in playsong to not set title for distort
 '''QUEUEING'''
 #new background task similar to shuffle loop for queues
 #searches add to bottom of queue and cancel shuffle loop, start queue loop if wasnt already
 #show queue, delete from queue, move x to y position, clear
 '''MAYBE'''
 #store volume preferences/history in db, display history
-#deepfry/turbo volume function
 #allow multiple songs directories, youtube/other streaming ---> refactor set shuffle/set queue/etc into seperate functions to make keeping state easier?
 
 with open('key.txt', 'r') as keyfile:

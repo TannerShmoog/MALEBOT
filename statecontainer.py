@@ -5,6 +5,7 @@ class guildStateContainer():
         self.is_shuffling = False
         self.is_queueing = False
         self.now_playing = None
+        self.np_dir = None
         self.timestamp = None
         self.id = None
         self.init_channel = None
