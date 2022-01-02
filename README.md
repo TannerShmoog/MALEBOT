@@ -9,6 +9,10 @@ Python Libraries: discord.py
 
 Binaries: ffmpeg.exe, ffprobe.exe
 
+A discord bot authentication token. The bot requires both messages and server members intents.
+
+Add your client ID into this link to invite your bot: https://discord.com/oauth2/authorize?client_id=YOUR_APPLICATION_ID&permissions=274881432640&scope=bot
+
 
 __SETUP__
 
