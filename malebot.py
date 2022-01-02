@@ -40,7 +40,9 @@ def getVoiceClient(guildid):
             return i
     return None
     
-def playSong(guildid, song, timestamp, stopflag=False, ffmpegoptions=None):
+def playSong(guildid, song, timestamp, stopflag=False, ffmpegoptions=None, settitle=True):
+    if settitle:
+        guildstates[guildid].title = song
     guildstates[guildid].now_playing = song
     guildstates[guildid].timestamp = timestamp
     if stopflag:
@@ -138,7 +140,7 @@ async def shuffle_loop():
                     if not getVoiceClient(guild.id).is_playing() and not getVoiceClient(guild.id).is_paused():
                         songchoice = random.choice(songitems)
                         playSong(guild.id, songchoice, int(time.time()))
-                        await guildstates[guild.id].init_channel.send("**♂NOW♂PLAYING♂:** "+songchoice)
+                        await guildstates[guild.id].init_channel.send("**♂NOW♂PLAYING♂:** "+guildstates[guild.id].title)
     
     for key in remove:
         guildstates.pop(key)
@@ -205,8 +207,8 @@ async def replay(ctx):
         return
         
     if guildstates[ctx.guild.id].now_playing != None:
-        playSong(ctx.guild.id, guildstates[ctx.guild.id].now_playing, int(time.time()), stopflag=True)
-        await ctx.send("**♂NOW♂PLAYING♂:** "+guildstates[ctx.guild.id].now_playing)
+        playSong(ctx.guild.id, guildstates[ctx.guild.id].now_playing, int(time.time()), stopflag=True, settitle=False)
+        await ctx.send("**♂NOW♂PLAYING♂:** "+guildstates[ctx.guild.id].title)
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")
 
@@ -228,7 +230,7 @@ async def seek(ctx, *args):
         return
     
     if guildstates[ctx.guild.id].now_playing != None:
-        playSong(ctx.guild.id, guildstates[ctx.guild.id].now_playing, int(time.time())-int(args[0]), stopflag=True, ffmpegoptions="-ss "+args[0])
+        playSong(ctx.guild.id, guildstates[ctx.guild.id].now_playing, int(time.time())-int(args[0]), stopflag=True, ffmpegoptions="-ss "+args[0], settitle=False)
         await ctx.send("**♂SEEKING♂TO♂:** "+args[0]+" SECONDS♂")
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")
@@ -244,7 +246,7 @@ async def nowplaying(ctx):
         duration = int(float(stringduration.strip().decode("utf-8")))
         currenttime = time.time() - guildstates[ctx.guild.id].timestamp
         filled = int((currenttime/duration)*25)
-        await ctx.send("**♂NOW♂PLAYING♂:** "+guildstates[ctx.guild.id].now_playing+"\n```"+timetostr(currenttime)+" | ▶️"+"="*filled+"-"*(25-filled)+"🔊 | "+timetostr(duration)+"```")
+        await ctx.send("**♂NOW♂PLAYING♂:** "+guildstates[ctx.guild.id].title+"\n```"+timetostr(currenttime)+" | ▶️"+"="*filled+"-"*(25-filled)+"🔊 | "+timetostr(duration)+"```")
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")        
 
@@ -268,7 +270,7 @@ async def distort(ctx, *args):
     if guildstates[ctx.guild.id].now_playing != None:
         distort_audio(songdir+guildstates[ctx.guild.id].now_playing, songdir, 15, ctx.guild.id)
         currenttime = int(time.time() - guildstates[ctx.guild.id].timestamp)
-        playSong(ctx.guild.id, "___"+str(ctx.guild.id)+"temp1.wav", int(time.time())-currenttime, stopflag=True, ffmpegoptions="-ss "+str(currenttime))
+        playSong(ctx.guild.id, "___"+str(ctx.guild.id)+"temp1.wav", int(time.time())-currenttime, stopflag=True, ffmpegoptions="-ss "+str(currenttime), settitle=False)
         await ctx.send("**♂LOUDER♂SIR♂** ")
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")
@@ -290,7 +292,7 @@ async def fuzzy(ctx, *args):
     if match:
         guildstates[ctx.guild.id].is_shuffling = False
         playSong(ctx.guild.id, match, int(time.time()), stopflag=True)
-        await ctx.send("**♂NOW♂PLAYING♂:** "+match)
+        await ctx.send("**♂NOW♂PLAYING♂:** "+guildstates[ctx.guild.id].title)
 
 @client.command(aliases=['key'])
 async def keyword(ctx, *args):
@@ -313,7 +315,7 @@ async def keyword(ctx, *args):
     if len(matches) == 1:
         guildstates[ctx.guild.id].is_shuffling = False
         playSong(ctx.guild.id, matches[0], int(time.time()), stopflag=True)
-        await ctx.send("**♂NOW♂PLAYING♂:** "+matches[0])
+        await ctx.send("**♂NOW♂PLAYING♂:** "+guildstates[ctx.guild.id].title)
     elif len(matches) > 1:
         outstr = "♂MULTIPLE♂MATCHES♂FOUND♂:\n"
         count = 0
