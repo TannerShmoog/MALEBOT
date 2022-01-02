@@ -343,7 +343,8 @@ async def help(ctx):
     "**Replay**\t|\t(aliases: 'replay', 're')\nReplays current song.\n\-\-\-\n"\
     "**Distort**\t|\t(aliases: 'distort', 'LOUDER')\nHeavily distorts current song.\n\-\-\-\n"\
     "**Fuzzy**\t|\t(aliases: 'fuzzy', 'f')\nDoes a simple fuzzy search for the argument in quotes.\n\-\-\-\n"\
-    "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\nSearches for matches containing all keywords.\n\-\-\-\n")
+    "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\nSearches for matches containing all keywords.\n\-\-\-\n"\
+    "**PLEASE NOTE - MALEBOT is currently still in development and can be offline or buggy periodically, expected full release date: Feb 01, 2022**\n\-\-\-\n")
 
 
 with open('key.txt', 'r') as keyfile:
