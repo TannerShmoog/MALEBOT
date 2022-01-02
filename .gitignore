@@ -133,3 +133,4 @@ songdir.txt
 test.py
 ffmpeg.exe
 ffprobe.exe
+*.png
