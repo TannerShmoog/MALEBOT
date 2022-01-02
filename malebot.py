@@ -286,10 +286,11 @@ async def fuzzy(ctx, *args):
     max = -1
     match = None
     for i in songitems:
-        score = matchCompare(re.sub(r'[^a-zA-Z0-9♂ ]+', '', i.lower().split('.')[0]).replace('♂', ' '), keywords)
-        if score > max:
-            max = score
-            match = i
+        if not i[-8:] == 'temp.wav':
+            score = matchCompare(re.sub(r'[^a-zA-Z0-9♂ ]+', '', i.lower().split('.')[0]).replace('♂', ' '), keywords)
+            if score > max:
+                max = score
+                match = i
             
     if match:
         guildstates[ctx.guild.id].is_shuffling = False
@@ -311,7 +312,7 @@ async def keyword(ctx, *args):
         for word in keywords:
             if word not in item:
                 flag = False
-        if flag:
+        if flag and not i[-8:] == 'temp.wav':
             matches.append(i)
     
     if len(matches) == 1:
