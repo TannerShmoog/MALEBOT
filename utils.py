@@ -14,10 +14,7 @@ def distort_audio(inputpath, outputdir, magnitude, guildid):
     tfm.norm(-1.0)
     tfm.bass(magnitude)
     tfm.treble(magnitude*0.42)
-    tfm.equalizer(60.0, 80.0, 9.0)
-    centralfreq = 107.0
-    startgain = 6.0
-    tfm.gain(32.0, normalize=False)
+    tfm.gain(magnitude*2, normalize=False)
     tfm.compand()
     tfm.build(outputdir+"___"+str(guildid)+'-temp.wav', outputdir+output_file)
     return output_file

@@ -257,20 +257,21 @@ async def distort(ctx, *args):
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
-    '''TODO: TAKE MAGNITUDE AS ARGUMENT 
+
     if len(args) == 0:
-        await ctx.send("♂ENTER♂A♂TIMESTAMP♂IN♂SECONDS♂")
-        return
-    try:
-        test = int(args[0])
-        if test <= 0:
-            raise ValueError
-    except:
-        await ctx.send("♂TIMESTAMP♂MUST♂BE♂A♂POSITIVE♂INTEGER♂")
-        return
-    '''
+        magnitude = 16
+    if len(args) > 0:
+        try:
+            test = int(args[0])
+            if test < 5 or test > 50:
+                raise ValueError
+            magnitude = test
+        except:
+            await ctx.send("♂TIMESTAMP♂MUST♂BE♂A♂POSITIVE♂INTEGER♂BETWEEN♂5♂AND♂50♂")
+            return
+
     if guildstates[ctx.guild.id].now_playing != None:
-        distorted_file = distort_audio(songdir+guildstates[ctx.guild.id].now_playing, songdir, 15, ctx.guild.id)
+        distorted_file = distort_audio(songdir+guildstates[ctx.guild.id].now_playing, songdir, magnitude, ctx.guild.id)
         currenttime = int(time.time() - guildstates[ctx.guild.id].timestamp)
         playSong(ctx.guild.id, distorted_file, int(time.time())-currenttime, stopflag=True, ffmpegoptions="-ss "+str(currenttime), settitle=False)
         await ctx.send("**♂LOUDER♂SIR♂** ")
