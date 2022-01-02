@@ -7,7 +7,9 @@ __REQUIREMENTS__
 
 Python Libraries: discord.py, pysox (https://github.com/rabitt/pysox , requires sox to be installed)
 
-Binaries: ffmpeg.exe, ffprobe.exe
+Binaries: ffmpeg.exe, ffprobe.exe (https://www.ffmpeg.org/download.html)
+
+**NOTE: Sox, ffmpeg, and ffprobe must be in your OS path
 
 A discord bot authentication token. The bot requires both messages and server members intents.
 
