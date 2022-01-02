@@ -5,7 +5,7 @@ A simple discord music bot to stream from a local library of files
 __MALE BOT HELP__
 __REQUIREMENTS__
 
-Python Libraries: discord.py
+Python Libraries: discord.py, pysox (https://github.com/rabitt/pysox , requires sox to be installed)
 
 Binaries: ffmpeg.exe, ffprobe.exe
 
