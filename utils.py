@@ -54,5 +54,6 @@ def matchCompare(str1, str2):
                 intersection += 1
                 pairs2[j] = None
                 break
-    
+    if union == 0:
+        return 0
     return (2*intersection)/union
