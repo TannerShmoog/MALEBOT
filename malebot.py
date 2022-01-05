@@ -40,7 +40,7 @@ def getVoiceClient(guildid):
             return i
     return None
     
-def playSong(guildid, song, timestamp, stopflag=False, ffmpegoptions=None, settitle=True):
+def playSong(guildid, song, timestamp, stopflag=False, ffmpegoptions='', settitle=True):
     if settitle:
         guildstates[guildid].title = song
     guildstates[guildid].now_playing = song
@@ -50,11 +50,7 @@ def playSong(guildid, song, timestamp, stopflag=False, ffmpegoptions=None, setti
         
     print("NP:\t"+song+"\t|\t"+str(guildid))
         
-    if ffmpegoptions == None:
-        getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song), after=lambda e: print("FINISHED:\t"+str(guildid)))
-    #special case for seek, but accepts any ffmpeg before_options
-    else:
-        getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song, before_options=ffmpegoptions), after=lambda e: print("FINISHED:\t"+str(guildid)))
+    getVoiceClient(guildid).play(discord.FFmpegPCMAudio(songdir+song, before_options=ffmpegoptions), after=lambda e: print("FINISHED:\t"+str(guildid)))
     getVoiceClient(guildid).source = discord.PCMVolumeTransformer(getVoiceClient(guildid).source)
 
 #disconnect from a guild    
@@ -267,7 +263,7 @@ async def distort(ctx, *args):
                 raise ValueError
             magnitude = test
         except:
-            await ctx.send("♂TIMESTAMP♂MUST♂BE♂A♂POSITIVE♂INTEGER♂BETWEEN♂5♂AND♂50♂")
+            await ctx.send("♂MAGNITUDE♂MUST♂BE♂A♂POSITIVE♂INTEGER♂BETWEEN♂5♂AND♂50♂")
             return
 
     if guildstates[ctx.guild.id].now_playing != None:
@@ -347,7 +343,7 @@ async def help(ctx):
     "**Seek**\t|\t(aliases: 'seek', 'se')\nSeek to time given an integer value in seconds.\n\-\-\-\n"\
     "**Now Playing**\t|\t(aliases: 'nowplaying', 'np')\nShow a progress bar for the current song.\n\-\-\-\n"\
     "**Replay**\t|\t(aliases: 'replay', 're')\nReplays current song.\n\-\-\-\n"\
-    "**Distort**\t|\t(aliases: 'distort', 'LOUDER')\nHeavily distorts current song.\n\-\-\-\n"\
+    "**Distort**\t|\t(aliases: 'distort', 'LOUDER')\nHeavily distorts current song, optionally takes an integer 5-50 as an argument to set magnitude.\n\-\-\-\n"\
     "**Fuzzy**\t|\t(aliases: 'fuzzy', 'f')\nDoes a simple fuzzy search for the argument in quotes.\n\-\-\-\n"\
     "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\nSearches for matches containing all keywords.\n\-\-\-\n"\
     "**PLEASE NOTE - MALEBOT is currently still in development and can be offline or buggy periodically, expected full release date: Feb 01, 2022**\n\-\-\-\n")
