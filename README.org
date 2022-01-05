@@ -37,5 +37,5 @@ Add your client ID into this link to invite your bot: https://discord.com/oauth2
 | Replay         | =replay=, =re=           | Replays current song.                                             |
 | Fuzzy          | =fuzzy=, =f=             | Does a simple fuzzy search for the argument in quotes.            |
 | Keyword Search | =keyword=, =key=         | Searches for matches containing all keywords.                     |
-| Distort        | =distort=, =LOUDER=      | Heavily distorts current song, optionally takes an integer 5-50 as an argument to set magnitude. |
+| Distort        | =distort=, =LOUDER=      | Heavily distorts current song, and toggles distorted mode on or off. Optionally takes an integer 5-50 as an argument to set magnitude. |
 
