@@ -114,11 +114,13 @@ async def on_ready():
 @client.command(aliases=['getoverhere', 'c'])
 #connect the bot to a voice channel
 async def join(ctx):
+    print('CONNECT\t|\t'+str(ctx.guild.id))
     if not is_connected(ctx.guild):
         await connectGuild(ctx)
     
 @client.command(aliases=['fuckyou', 'dc'])
 async def leave(ctx):
+    print('DISCONNECT\t|\t'+str(ctx.guild.id))
     if is_connected(ctx.guild):
         await disconnectGuild(ctx.guild)
 
@@ -151,12 +153,14 @@ async def shuffle_loop():
         
 @client.command(aliases=['shuffle', 's'])
 async def randomplay(ctx):    
+    print('SHUFFLE\t|\t'+str(ctx.guild.id))
     if not is_connected(ctx.guild):     
         await connectGuild(ctx)
     guildstates[ctx.guild.id].is_shuffling = True
                
 @client.command(aliases=['stop', 'st'])
 async def deactivate(ctx):
+    print('STOP\t|\t'+str(ctx.guild.id))
     if is_connected(ctx.guild):
         if getVoiceClient(ctx.guild.id) != None:
             if getVoiceClient(ctx.guild.id).is_playing or getVoiceClient(ctx.guild.id).is_paused:
@@ -165,6 +169,7 @@ async def deactivate(ctx):
   
 @client.command(aliases=['sk'])
 async def skip(ctx):
+    print('SKIP\t|\t'+str(ctx.guild.id))
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return      
@@ -172,6 +177,7 @@ async def skip(ctx):
  
 @client.command(aliases=['p'])
 async def pause(ctx):
+    print('PAUSE\t|\t'+str(ctx.guild.id))
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
@@ -181,6 +187,7 @@ async def pause(ctx):
         
 @client.command(aliases=['r'])
 async def resume(ctx):
+    print('RESUME\t|\t'+str(ctx.guild.id))
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
@@ -190,6 +197,7 @@ async def resume(ctx):
 
 @client.command(aliases=['v'])
 async def volume(ctx, arg):
+    print('VOLUME\t|\t'+str(ctx.guild.id)+'\t|\t'+str(arg))
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
@@ -206,6 +214,7 @@ async def volume(ctx, arg):
         
 @client.command(aliases=['re'])
 async def replay(ctx):
+    print('REPLAY\t|\t'+str(ctx.guild.id))
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
@@ -218,6 +227,7 @@ async def replay(ctx):
 
 @client.command(aliases=['se'])
 async def seek(ctx, *args):
+    print('SEEK\t|\t'+str(ctx.guild.id)+'\t|\t'+str(args))
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
@@ -241,6 +251,7 @@ async def seek(ctx, *args):
 
 @client.command(aliases=['np'])
 async def nowplaying(ctx):
+    print('NOWPLAYING\t|\t'+str(ctx.guild.id))
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
@@ -256,6 +267,7 @@ async def nowplaying(ctx):
 
 @client.command(aliases=['LOUDER'])
 async def distort(ctx, *args):
+    print('DISTORT\t|\t'+str(ctx.guild.id)+'\t|\t'+str(args))
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
@@ -277,7 +289,7 @@ async def distort(ctx, *args):
             return
     
     guildstates[ctx.guild.id].is_louder = not guildstates[ctx.guild.id].is_louder
-    #TODO: if its already playing, need to stop and restart at current timestamp to turn on or off. also need to add distort_audio to playsong for future songs until toggled off
+    
     if guildstates[ctx.guild.id].now_playing != None:
         if guildstates[ctx.guild.id].is_louder:
             distorted_file = distort_audio(songdir+guildstates[ctx.guild.id].now_playing, songdir, guildstates[ctx.guild.id].louder_magnitude, ctx.guild.id)
@@ -293,6 +305,7 @@ async def distort(ctx, *args):
         
 @client.command(aliases=['f'])
 async def fuzzy(ctx, *args):
+    print('FUZZY\t|\t'+str(ctx.guild.id)+'\t|\t'+str(args))
     if not is_connected(ctx.guild):
         await connectGuild(ctx)
     
@@ -318,6 +331,7 @@ async def fuzzy(ctx, *args):
 
 @client.command(aliases=['key'])
 async def keyword(ctx, *args):
+    print('KEYWORD\t|\t'+str(ctx.guild.id)+'\t|\t'+str(args))
     if not is_connected(ctx.guild):
         await connectGuild(ctx)
             
@@ -370,7 +384,7 @@ async def help(ctx):
     "**Seek**\t|\t(aliases: 'seek', 'se')\nSeek to time given an integer value in seconds.\n\-\-\-\n"\
     "**Now Playing**\t|\t(aliases: 'nowplaying', 'np')\nShow a progress bar for the current song.\n\-\-\-\n"\
     "**Replay**\t|\t(aliases: 'replay', 're')\nReplays current song.\n\-\-\-\n"\
-    "**Distort**\t|\t(aliases: 'distort', 'LOUDER')\nHeavily distorts current song, optionally takes an integer 5-50 as an argument to set magnitude.\n\-\-\-\n"\
+    "**Distort**\t|\t(aliases: 'distort', 'LOUDER')\nHeavily distorts current song, and toggles distorted mode on or off. Optionally takes an integer 5-50 as an argument to set magnitude.\n\-\-\-\n"\
     "**Fuzzy**\t|\t(aliases: 'fuzzy', 'f')\nDoes a simple fuzzy search for the argument in quotes.\n\-\-\-\n"\
     "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\nSearches for matches containing all keywords.\n\-\-\-\n"\
     "**PLEASE NOTE - MALEBOT is currently still in development and can be offline or buggy periodically, expected full release date: Feb 01, 2022**\n\-\-\-\n")
