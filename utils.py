@@ -1,4 +1,4 @@
-import datetime, sox, subprocess
+import datetime, sox, subprocess, os
 
 #convert time in seconds to a hh:mm:ss string
 def timetostr(seconds):
@@ -17,6 +17,7 @@ def distort_audio(inputpath, outputdir, magnitude, guildid):
     tfm.gain(magnitude*2, normalize=False)
     tfm.compand()
     tfm.build(outputdir+"___"+str(guildid)+'-temp.wav', outputdir+output_file)
+    os.remove(outputdir+"___"+str(guildid)+'-temp.wav')
     return output_file
 
 def letterPairs(string):

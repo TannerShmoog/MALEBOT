@@ -23,7 +23,7 @@ global guildstates
 guildstates = {}
 #songs directory
 with open('songdir.txt', 'r') as songfile:
-    songdir = songfile.read()
+    songdir = songfile.read().strip()
 songitems = os.listdir(songdir)
 
 
@@ -107,6 +107,12 @@ async def on_voice_state_update(member, before, after):
 async def on_ready():
     print('Logged in as {0.user}'.format(client))
     await client.change_presence(activity=discord.Game(name="try .help"))
+    
+    #delete leftover temp files
+    for song in songitems:
+        if song[:3] == '___' and song[-8:] == 'temp.wav':
+            os.remove(songdir+song)
+            print('DELETED OLD TEMP:'+song)
     if not shuffle_loop.is_running():
         shuffle_loop.start()
 
@@ -391,4 +397,4 @@ async def help(ctx):
 
 
 with open('key.txt', 'r') as keyfile:
-    client.run(keyfile.read())
+    client.run(keyfile.read().strip())
