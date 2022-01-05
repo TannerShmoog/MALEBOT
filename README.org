@@ -3,22 +3,18 @@ A simple discord music bot to stream from a local library of files
 
 * REQUIREMENTS
 
-Python Libraries: discord.py, pysox (https://github.com/rabitt/pysox , requires sox to be installed)
+Python Libraries: discord.py, pysox (https://github.com/rabitt/pysox), requires sox to be installed)
 
-Binaries: ffmpeg.exe, ffprobe.exe (https://www.ffmpeg.org/download.html)
-
-**NOTE: Sox, ffmpeg, and ffprobe must be in your OS path
-
-A discord bot authentication token. The bot requires both messages and server members intents.
-
-Add your client ID into this link to invite your bot: https://discord.com/oauth2/authorize?client_id=YOUR_APPLICATION_ID&permissions=274881432640&scope=bot
-
+Binaries: *FFMPEG*, *FFPROBE* (https://www.ffmpeg.org/download.html), *SOX* (updated link can be found in the pysox github readme)
 
 * SETUP
-
-1. Create 'songdir.txt', and enter a windows URL pointing to the directory containing your music files.
-2. Create 'key.txt', and enter your bot's authentication key from the discord developer portal.
-3. Place these files in the same directory as the bot.
+1. Install Sox, ffmpeg, and ffprobe binaries **THESE MUST BE IN YOUR OS PATH**
+2. Go to https://discord.com/developers/applications and create an application, then add a bot to it.
+3. Ensure both message and server member intents are enabled, then generate a client authentication token 
+4. Create 'songdir.txt', and enter a windows URL pointing to the directory containing your music files.
+5. Create 'key.txt', and enter your bot's authentication key from the discord developer portal.
+6. Place these files in the same directory as the bot.
+7. Add your client ID into this link to invite your bot: https://discord.com/oauth2/authorize?client_id=YOUR_APPLICATION_ID&permissions=274881432640&scope=bot
 
 * COMMANDS (case sensitive)
 
