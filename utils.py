@@ -1,51 +1,65 @@
 import datetime, sox, subprocess, os
 
-#convert time in seconds to a hh:mm:ss string
+# convert time in seconds to a hh:mm:ss string
 def timetostr(seconds):
-    outstr = str(datetime.timedelta(seconds=seconds)).split('.')[0]
-    if outstr.split(':')[0] == '0':
+    outstr = str(datetime.timedelta(seconds=seconds)).split(".")[0]
+    if outstr.split(":")[0] == "0":
         return outstr[2:]
     return outstr
 
-def distort_audio(inputpath, outputdir, magnitude, guildid):  
-    subprocess.run(['ffmpeg', '-y', '-i', inputpath, outputdir+"___"+str(guildid)+'-temp.wav', '-loglevel', 'quiet'])
-    output_file = "___1-"+str(guildid)+"-temp.wav"
+
+def distort_audio(inputpath, outputdir, magnitude, guildid):
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-i",
+            inputpath,
+            outputdir + "___" + str(guildid) + "-temp.wav",
+            "-loglevel",
+            "quiet",
+        ]
+    )
+    output_file = "___1-" + str(guildid) + "-temp.wav"
     tfm = sox.Transformer()
     tfm.norm(-1.0)
     tfm.bass(magnitude)
-    tfm.treble(magnitude*0.42)
-    tfm.gain(magnitude*2, normalize=False)
+    tfm.treble(magnitude * 0.42)
+    tfm.gain(magnitude * 2, normalize=False)
     tfm.compand()
-    tfm.build(outputdir+"___"+str(guildid)+'-temp.wav', outputdir+output_file)
-    os.remove(outputdir+"___"+str(guildid)+'-temp.wav')
+    tfm.build(outputdir + "___" + str(guildid) + "-temp.wav", outputdir + output_file)
+    os.remove(outputdir + "___" + str(guildid) + "-temp.wav")
     return output_file
 
+
 def letterPairs(string):
-    numPairs = len(string)-1 
+    numPairs = len(string) - 1
     pairs = []
-    
+
     for i in range(numPairs):
-        pairs.append([string[i], string[i+1]])
-    
+        pairs.append([string[i], string[i + 1]])
+
     return pairs
-    
+
+
 def wordLetterPairs(string):
     allpairs = []
-    words = string.strip().split(' ')
-    
+    words = string.strip().split(" ")
+
     for i in words:
         pairsinword = letterPairs(i)
         for j in pairsinword:
             allpairs.append(j)
-    
+
     return allpairs
-    
+
+
 def matchCompare(str1, str2):
     pairs1 = wordLetterPairs(str1)
     pairs2 = wordLetterPairs(str2)
     intersection = 0
     union = len(pairs1) + len(pairs2)
-    
+
     resultset = []
     for i in range(len(pairs1)):
         pair1 = pairs1[i]
@@ -57,4 +71,4 @@ def matchCompare(str1, str2):
                 break
     if union == 0:
         return 0
-    return (2*intersection)/union
+    return (2 * intersection) / union
