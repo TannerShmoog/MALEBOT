@@ -1,7 +1,10 @@
-import datetime, sox, subprocess, os
+import datetime
+import sox
+import subprocess
+import os
 
 # convert time in seconds to a hh:mm:ss string
-def timetostr(seconds):
+def time_to_str(seconds):
     outstr = str(datetime.timedelta(seconds=seconds)).split(".")[0]
     if outstr.split(":")[0] == "0":
         return outstr[2:]
@@ -32,7 +35,7 @@ def distort_audio(inputpath, outputdir, magnitude, guildid):
     return output_file
 
 
-def letterPairs(string):
+def letter_pairs(string):
     numPairs = len(string) - 1
     pairs = []
 
@@ -42,21 +45,21 @@ def letterPairs(string):
     return pairs
 
 
-def wordLetterPairs(string):
+def word_letter_pairs(string):
     allpairs = []
     words = string.strip().split(" ")
 
     for i in words:
-        pairsinword = letterPairs(i)
+        pairsinword = letter_pairs(i)
         for j in pairsinword:
             allpairs.append(j)
 
     return allpairs
 
 
-def matchCompare(str1, str2):
-    pairs1 = wordLetterPairs(str1)
-    pairs2 = wordLetterPairs(str2)
+def match_compare(str1, str2):
+    pairs1 = word_letter_pairs(str1)
+    pairs2 = word_letter_pairs(str2)
     intersection = 0
     union = len(pairs1) + len(pairs2)
 

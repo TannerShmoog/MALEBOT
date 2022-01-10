@@ -11,8 +11,8 @@ from discord.ext import commands
 from discord.ext import tasks
 
 from utils import *
-from queueclass import musicQueue
-from statecontainer import guildStateContainer
+from queueclass import MusicQueue
+from statecontainer import GuildStateContainer
 
 global client
 global songitems
@@ -40,7 +40,7 @@ def is_connected(guild):
     return voice
 
 
-def getVoiceClient(guildid):
+def get_voice_client(guildid):
     """Find a voice client by guild id, or return false if not found."""
     for i in client.voice_clients:
         if i.guild.id == guildid:
@@ -48,7 +48,7 @@ def getVoiceClient(guildid):
     return None
 
 
-def playSong(guildid, song, timestamp, stopflag=True, ffmpegoptions="", settitle=True):
+def play_song(guildid, song, timestamp, stopflag=True, ffmpegoptions="", settitle=True):
     """Set state for the guild in question, then start the FFMPEG player object."""
 
     if settitle:  # set the display title or not, used when playing an altered sound file
@@ -57,28 +57,30 @@ def playSong(guildid, song, timestamp, stopflag=True, ffmpegoptions="", settitle
     guildstates[guildid].timestamp = timestamp
 
     if stopflag:  # if we should stop the currently playing song immediately or not
-        getVoiceClient(guildid).stop()
+        get_voice_client(guildid).stop()
     print("NP:\t" + song + "\t|\t" + str(guildid))
-    getVoiceClient(guildid).play(
+    get_voice_client(guildid).play(
         discord.FFmpegPCMAudio(songdir + song, before_options=ffmpegoptions),
         after=lambda e: print("FINISHED:\t" + str(guildid)),
     )
-    getVoiceClient(guildid).source = discord.PCMVolumeTransformer(getVoiceClient(guildid).source)
+    get_voice_client(guildid).source = discord.PCMVolumeTransformer(
+        get_voice_client(guildid).source
+    )
 
 
-async def disconnectGuild(guild):
+async def disconnect_guild(guild):
     """Disconnect from a guild."""
     if not is_connected(guild):
         return
-    getVoiceClient(guild.id).stop()
-    await getVoiceClient(guild.id).disconnect()
+    get_voice_client(guild.id).stop()
+    await get_voice_client(guild.id).disconnect()
     await asyncio.sleep(1)  # to make sure the disconnect finishes before removing the state
     if guild.id in guildstates.keys():
         guildstates.pop(guild.id)
     print("DISCONNECTED:\t" + str(guild.id))
 
 
-async def connectGuild(ctx):
+async def connect_guild(ctx):
     """Connect to a guild."""
     connected = ctx.author.voice
     if not connected:
@@ -87,7 +89,7 @@ async def connectGuild(ctx):
     vc = await connected.channel.connect()
 
     if ctx.guild.id not in guildstates.keys():
-        guildstates[ctx.guild.id] = guildStateContainer()
+        guildstates[ctx.guild.id] = GuildStateContainer()
         guildstates[ctx.guild.id].id = ctx.guild.id
         guildstates[ctx.guild.id].init_channel = ctx
     print("CONNECTED:\t" + str(ctx.guild.id))
@@ -99,7 +101,7 @@ async def connectGuild(ctx):
 @client.event
 async def on_voice_state_update(member, before, after):
     """Disconnect if alone in the channel."""
-    if not getVoiceClient(member.guild.id):
+    if not get_voice_client(member.guild.id):
         return
 
     await asyncio.sleep(1)  # discord's member list updates slowly
@@ -114,7 +116,7 @@ async def on_voice_state_update(member, before, after):
                     if chanmem.id == client.user.id:
                         flag = True
                 if flag:
-                    await disconnectGuild(member.guild)
+                    await disconnect_guild(member.guild)
 
 
 @client.event
@@ -139,7 +141,7 @@ async def join(ctx):
     """Connect the bot to a voice channel."""
     print("CONNECT\t|\t" + str(ctx.guild.id))
     if not is_connected(ctx.guild):
-        await connectGuild(ctx)
+        await connect_guild(ctx)
 
 
 @client.command(aliases=["fuckyou", "dc"])
@@ -147,7 +149,7 @@ async def leave(ctx):
     """Disconnect the bot from a voice channel."""
     print("DISCONNECT\t|\t" + str(ctx.guild.id))
     if is_connected(ctx.guild):
-        await disconnectGuild(ctx.guild)
+        await disconnect_guild(ctx.guild)
 
 
 @tasks.loop(seconds=1)
@@ -159,11 +161,11 @@ async def shuffle_loop():
         if not is_connected(client.get_guild(guild.id)):
             remove.append(key)  # to avoid inconsistent state from unexpected disconnection
         else:
-            if getVoiceClient(guild.id) and guild.is_shuffling:
-                if getVoiceClient(guild.id).is_playing() is not None:
+            if get_voice_client(guild.id) and guild.is_shuffling:
+                if get_voice_client(guild.id).is_playing() is not None:
                     if (
-                        not getVoiceClient(guild.id).is_playing()
-                        and not getVoiceClient(guild.id).is_paused()
+                        not get_voice_client(guild.id).is_playing()
+                        and not get_voice_client(guild.id).is_paused()
                     ):
                         songchoice = ""
                         while songchoice == "" or songchoice[-8:] == "temp.wav":
@@ -177,7 +179,7 @@ async def shuffle_loop():
                                 guild.id,
                             )
                             guildstates[guild.id].title = songchoice
-                            playSong(
+                            play_song(
                                 guild.id,
                                 distorted_file,
                                 int(time.time()),
@@ -185,7 +187,7 @@ async def shuffle_loop():
                                 settitle=False,
                             )
                         else:
-                            playSong(guild.id, songchoice, int(time.time()), stopflag=False)
+                            play_song(guild.id, songchoice, int(time.time()), stopflag=False)
                         await guildstates[guild.id].init_channel.send(
                             "**♂NOW♂PLAYING♂:** " + guildstates[guild.id].title
                         )
@@ -199,7 +201,7 @@ async def randomplay(ctx):
     """Continuously play random songs in the guild."""
     print("SHUFFLE\t|\t" + str(ctx.guild.id))
     if not is_connected(ctx.guild):
-        await connectGuild(ctx)
+        await connect_guild(ctx)
     guildstates[ctx.guild.id].is_shuffling = True
 
 
@@ -208,9 +210,12 @@ async def deactivate(ctx):
     """Stop the current song, and cancel shuffle/queue loops."""
     print("STOP\t|\t" + str(ctx.guild.id))
     if is_connected(ctx.guild):
-        if getVoiceClient(ctx.guild.id) is not None:
-            if getVoiceClient(ctx.guild.id).is_playing or getVoiceClient(ctx.guild.id).is_paused:
-                getVoiceClient(ctx.guild.id).stop()
+        if get_voice_client(ctx.guild.id) is not None:
+            if (
+                get_voice_client(ctx.guild.id).is_playing
+                or get_voice_client(ctx.guild.id).is_paused
+            ):
+                get_voice_client(ctx.guild.id).stop()
                 guildstates[ctx.guild.id].is_shuffling = False
 
 
@@ -221,7 +226,7 @@ async def skip(ctx):
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
-    getVoiceClient(ctx.guild.id).stop()
+    get_voice_client(ctx.guild.id).stop()
 
 
 @client.command(aliases=["p"])
@@ -232,8 +237,8 @@ async def pause(ctx):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
 
-    if not getVoiceClient(ctx.guild.id).is_paused():
-        getVoiceClient(ctx.guild.id).pause()
+    if not get_voice_client(ctx.guild.id).is_paused():
+        get_voice_client(ctx.guild.id).pause()
 
 
 @client.command(aliases=["r"])
@@ -244,8 +249,8 @@ async def resume(ctx):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
 
-    if getVoiceClient(ctx.guild.id).is_paused():
-        getVoiceClient(ctx.guild.id).resume()
+    if get_voice_client(ctx.guild.id).is_paused():
+        get_voice_client(ctx.guild.id).resume()
 
 
 @client.command(aliases=["v"])
@@ -256,11 +261,11 @@ async def volume(ctx, arg):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
 
-    if getVoiceClient(ctx.guild.id).is_playing or getVoiceClient(ctx.guild.id).is_paused:
+    if get_voice_client(ctx.guild.id).is_playing or get_voice_client(ctx.guild.id).is_paused:
         try:
             floatvol = round(float(arg), 2)
             if floatvol > 0 and floatvol <= 1.0:
-                getVoiceClient(ctx.guild.id).source.volume = floatvol
+                get_voice_client(ctx.guild.id).source.volume = floatvol
             else:
                 await ctx.send("♂FUCK♂YOU♂ (use a decimal number 0.01 to 1.00)")
         except:
@@ -276,7 +281,7 @@ async def replay(ctx):
         return
 
     if guildstates[ctx.guild.id].now_playing is not None:
-        playSong(
+        play_song(
             ctx.guild.id,
             guildstates[ctx.guild.id].now_playing,
             int(time.time()),
@@ -307,7 +312,7 @@ async def seek(ctx, *args):
         return
 
     if guildstates[ctx.guild.id].now_playing is not None:
-        playSong(
+        play_song(
             ctx.guild.id,
             guildstates[ctx.guild.id].now_playing,
             int(time.time()) - int(args[0]),
@@ -350,12 +355,12 @@ async def nowplaying(ctx):
             "**♂NOW♂PLAYING♂:** "
             + guildstates[ctx.guild.id].title
             + "\n```"
-            + timetostr(currenttime)
+            + time_to_str(currenttime)
             + " | ▶️"
             + "=" * filled
             + "-" * (25 - filled)
             + "🔊 | "
-            + timetostr(duration)
+            + time_to_str(duration)
             + "```"
         )
     else:
@@ -364,8 +369,9 @@ async def nowplaying(ctx):
 
 @client.command(aliases=["LOUDER"])
 async def distort(ctx, *args):
-    """Toggle a mode to heavily distort played songs."""
-    """Optionally takes an integer 5-50 as an argument to set magnitude."""
+    """Toggle a mode to heavily distort played songs.
+    Optionally takes an integer 5-50 as an argument to set magnitude.
+    """
     print("DISTORT\t|\t" + str(ctx.guild.id) + "\t|\t" + str(args))
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
@@ -398,7 +404,7 @@ async def distort(ctx, *args):
                 ctx.guild.id,
             )
             currenttime = int(time.time() - guildstates[ctx.guild.id].timestamp)
-            playSong(
+            play_song(
                 ctx.guild.id,
                 distorted_file,
                 int(time.time()) - currenttime,
@@ -408,7 +414,7 @@ async def distort(ctx, *args):
             await ctx.send("**♂LOUDER♂SIR♂**")
         else:
             currenttime = int(time.time() - guildstates[ctx.guild.id].timestamp)
-            playSong(
+            play_song(
                 ctx.guild.id,
                 guildstates[ctx.guild.id].title,
                 int(time.time()) - currenttime,
@@ -421,19 +427,21 @@ async def distort(ctx, *args):
 
 @client.command(aliases=["f"])
 async def fuzzy(ctx, *args):
-    """Perform a fuzzy search for the string given by the user."""
-    """Uses Simon White's 'Strike a match' algorithm, as it is more length agnostic than most."""
-    """More information: http://www.catalysoft.com/articles/strikeamatch.html"""
+    """Perform a fuzzy search for the string given by the user.
+    Uses Simon White's 'Strike a Match' algorithm, as it is more length agnostic than most.
+
+    More information: http://www.catalysoft.com/articles/strikeamatch.html
+    """
     print("FUZZY\t|\t" + str(ctx.guild.id) + "\t|\t" + str(args))
     if not is_connected(ctx.guild):
-        await connectGuild(ctx)
+        await connect_guild(ctx)
 
     keywords = " ".join(args[:]).lower()
     max = -1
     match = None
     for i in songitems:
         if not i[-8:] == "temp.wav":
-            score = matchCompare(
+            score = match_compare(
                 re.sub(r"[^a-zA-Z0-9♂ ]+", "", i.lower().split(".")[0]).replace("♂", " "), keywords
             )
             if score > max:
@@ -447,9 +455,9 @@ async def fuzzy(ctx, *args):
                 songdir + match, songdir, guildstates[ctx.guild.id].louder_magnitude, ctx.guild.id
             )
             guildstates[ctx.guild.id].title = match
-            playSong(ctx.guild.id, distorted_file, int(time.time()), settitle=False)
+            play_song(ctx.guild.id, distorted_file, int(time.time()), settitle=False)
         else:
-            playSong(ctx.guild.id, match, int(time.time()))
+            play_song(ctx.guild.id, match, int(time.time()))
         await ctx.send("**♂NOW♂PLAYING♂:** " + guildstates[ctx.guild.id].title)
 
 
@@ -459,7 +467,7 @@ async def keyword(ctx, *args):
     """If multiple matches are found, they are displayed to the user."""
     print("KEYWORD\t|\t" + str(ctx.guild.id) + "\t|\t" + str(args))
     if not is_connected(ctx.guild):
-        await connectGuild(ctx)
+        await connect_guild(ctx)
 
     keywords = " ".join(args[:]).lower().split(" ")
     matches = []
@@ -484,9 +492,9 @@ async def keyword(ctx, *args):
                 ctx.guild.id,
             )
             guildstates[ctx.guild.id].title = matches[0]
-            playSong(ctx.guild.id, distorted_file, int(time.time()), settitle=False)
+            play_song(ctx.guild.id, distorted_file, int(time.time()), settitle=False)
         else:
-            playSong(ctx.guild.id, matches[0], int(time.time()))
+            play_song(ctx.guild.id, matches[0], int(time.time()))
         await ctx.send("**♂NOW♂PLAYING♂:** " + guildstates[ctx.guild.id].title)
     elif len(matches) > 1:
         outstr = "♂MULTIPLE♂MATCHES♂FOUND♂:\n"
@@ -583,12 +591,12 @@ except:
     sys.exit(0)
 
 songitems = []
-validMediaTypes = ["wav", "webm", "mp4", "mp3", "avi", "mkv", "ogg"]
+validmediatypes = ["wav", "webm", "mp4", "mp3", "avi", "mkv", "ogg"]
 # extract only media files from the song directory
 for i in tempitems:
     suffix = i.split(".")[-1]
-    if suffix in validMediaTypes:
-        songitems.append(validMediaTypes)
+    if suffix in validmediatypes:
+        songitems.append(validmediatypes)
 
 if len(songitems) < 1:
     print("Error: No valid media files in specified directory.")

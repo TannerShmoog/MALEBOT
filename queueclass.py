@@ -1,4 +1,4 @@
-class musicQueue:
+class MusicQueue:
     def __init__(self, guild):
         self.songlist = []
         self.guild = guild

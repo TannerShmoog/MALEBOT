@@ -1,4 +1,4 @@
-class guildStateContainer:
+class GuildStateContainer:
     def __init__(self):
         self.is_shuffling = False
         self.is_queueing = False
