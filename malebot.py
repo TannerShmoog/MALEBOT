@@ -1,4 +1,5 @@
 import os
+import sys
 import random
 import re
 import time
@@ -28,11 +29,6 @@ client.remove_command("help")
 
 # initialize a dictionary to store state for each guild
 guildstates = {}
-
-# open the song directory and make a list of song files
-with open("songdir.txt", "r") as songfile:
-    songdir = songfile.read().strip()
-songitems = os.listdir(songdir)
 
 
 """HELPER FUNCTIONS"""
@@ -554,5 +550,56 @@ async def help(ctx):
     )
 
 
-with open("key.txt", "r") as keyfile:
-    client.run(keyfile.read().strip())
+"""Check for dependencies"""
+
+try:
+    subprocess.check_output(["ffmpeg", "-version"])
+except:
+    print("Error: missing ffmpeg binary, make sure it is in your OS path.")
+    sys.exit(0)
+
+try:
+    subprocess.check_output(["ffprobe", "-version"])
+except:
+    print("Error: missing ffprobe binary, make sure it is in your OS path.")
+    sys.exit(0)
+
+try:
+    subprocess.check_output(["sox", "-h"])
+except:
+    print("Error: missing sox binary, make sure it is in your OS path.")
+    sys.exit(0)
+
+"""Check for valid configuration files"""
+
+try:
+    with open("songdir.txt", "r") as songfile:
+        songdir = songfile.read().strip()
+    tempitems = os.listdir(songdir)
+except:
+    print(
+        "Error: Problem with songdir.txt configuration. Please ensure it is a valid OS URL on a single line."
+    )
+    sys.exit(0)
+
+songitems = []
+validMediaTypes = ["wav", "webm", "mp4", "mp3", "avi", "mkv", "ogg"]
+# extract only media files from the song directory
+for i in tempitems:
+    suffix = i.split(".")[-1]
+    if suffix in validMediaTypes:
+        songitems.append(validMediaTypes)
+
+if len(songitems) < 1:
+    print("Error: No valid media files in specified directory.")
+    sys.exit(0)
+
+"""Run the client"""
+try:
+    with open("key.txt", "r") as keyfile:
+        client.run(keyfile.read().strip())
+except:
+    print(
+        "Error: problem opening the client with specified auth key, possibly an issue with key.txt configuration."
+    )
+    sys.exit(0)
