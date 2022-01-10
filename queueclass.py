@@ -13,7 +13,7 @@ class musicQueue:
         self.songlist = []
 
     def playsong(self):
-        return a.pop(0)
+        return self.songlist.pop(0)
 
     def is_empty(self):
         return len(self.songlist) == 0
