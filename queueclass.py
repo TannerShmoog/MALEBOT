@@ -1,7 +1,6 @@
 class MusicQueue:
-    def __init__(self, guild):
+    def __init__(self):
         self.songlist = []
-        self.guild = guild
 
     def add(self, songName):
         self.songlist.append(songName)

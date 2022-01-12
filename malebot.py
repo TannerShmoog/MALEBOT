@@ -48,17 +48,24 @@ def get_voice_client(guildid):
     return None
 
 
-def play_song(guildid, song, timestamp, stopflag=True, ffmpegoptions="", settitle=True):
+def play_song(guildid, song, timestamp, stopflag=True, ffmpegoptions=""):
     """Set state for the guild in question, then start the FFMPEG player object."""
 
-    if settitle:  # set the display title or not, used when playing an altered sound file
-        guildstates[guildid].title = song
-    guildstates[guildid].now_playing = song
+    guildstates[guildid].title = song
     guildstates[guildid].timestamp = timestamp
 
     if stopflag:  # if we should stop the currently playing song immediately or not
         get_voice_client(guildid).stop()
     print("NP:\t" + song + "\t|\t" + str(guildid))
+    if guildstates[guildid].is_louder:
+        song = distort_audio(
+            songdir + song,
+            songdir,
+            guildstates[guildid].louder_magnitude,
+            guildid,
+        )
+
+    guildstates[guildid].now_playing = song  # set the now playing AFTER potentially distorting
     get_voice_client(guildid).play(
         discord.FFmpegPCMAudio(songdir + song, before_options=ffmpegoptions),
         after=lambda e: print("FINISHED:\t" + str(guildid)),
@@ -170,24 +177,7 @@ async def shuffle_loop():
                         songchoice = ""
                         while songchoice == "" or songchoice[-8:] == "temp.wav":
                             songchoice = random.choice(songitems)  # avoid altered files
-
-                        if guildstates[guild.id].is_louder:
-                            distorted_file = distort_audio(
-                                songdir + songchoice,
-                                songdir,
-                                guildstates[guild.id].louder_magnitude,
-                                guild.id,
-                            )
-                            guildstates[guild.id].title = songchoice
-                            play_song(
-                                guild.id,
-                                distorted_file,
-                                int(time.time()),
-                                stopflag=False,
-                                settitle=False,
-                            )
-                        else:
-                            play_song(guild.id, songchoice, int(time.time()), stopflag=False)
+                        play_song(guild.id, songchoice, int(time.time()), stopflag=False)
                         await guildstates[guild.id].init_channel.send(
                             "**♂NOW♂PLAYING♂:** " + guildstates[guild.id].title
                         )
@@ -285,7 +275,6 @@ async def replay(ctx):
             ctx.guild.id,
             guildstates[ctx.guild.id].now_playing,
             int(time.time()),
-            settitle=False,
         )
         await ctx.send("**♂NOW♂PLAYING♂:** " + guildstates[ctx.guild.id].title)
     else:
@@ -317,7 +306,6 @@ async def seek(ctx, *args):
             guildstates[ctx.guild.id].now_playing,
             int(time.time()) - int(args[0]),
             ffmpegoptions="-ss " + args[0],
-            settitle=False,
         )  # Subtract the amount of seconds seeked to from the current time to simulate an earlier start time
         await ctx.send("**♂SEEKING♂TO♂:** " + args[0] + " SECONDS♂")
     else:
@@ -396,30 +384,22 @@ async def distort(ctx, *args):
     guildstates[ctx.guild.id].is_louder = not guildstates[ctx.guild.id].is_louder  # toggle mode
 
     if guildstates[ctx.guild.id].now_playing is not None:
+        currenttime = int(time.time() - guildstates[ctx.guild.id].timestamp)
         if guildstates[ctx.guild.id].is_louder:
-            distorted_file = distort_audio(
-                songdir + guildstates[ctx.guild.id].now_playing,
-                songdir,
-                guildstates[ctx.guild.id].louder_magnitude,
-                ctx.guild.id,
-            )
-            currenttime = int(time.time() - guildstates[ctx.guild.id].timestamp)
             play_song(
                 ctx.guild.id,
-                distorted_file,
+                guildstates[ctx.guild.id].now_playing,
                 int(time.time()) - currenttime,
                 ffmpegoptions="-ss " + str(currenttime),
-                settitle=False,
             )
             await ctx.send("**♂LOUDER♂SIR♂**")
         else:
-            currenttime = int(time.time() - guildstates[ctx.guild.id].timestamp)
             play_song(
                 ctx.guild.id,
                 guildstates[ctx.guild.id].title,
                 int(time.time()) - currenttime,
                 ffmpegoptions="-ss " + str(currenttime),
-            )  # use title of currently playing song to find the original file and replay it
+            )
             await ctx.send("♂quieter♂sir♂")
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")
@@ -449,15 +429,8 @@ async def fuzzy(ctx, *args):
                 match = i
 
     if match:
-        guildstates[ctx.guild.id].is_shuffling = False
-        if guildstates[ctx.guild.id].is_louder:
-            distorted_file = distort_audio(
-                songdir + match, songdir, guildstates[ctx.guild.id].louder_magnitude, ctx.guild.id
-            )
-            guildstates[ctx.guild.id].title = match
-            play_song(ctx.guild.id, distorted_file, int(time.time()), settitle=False)
-        else:
-            play_song(ctx.guild.id, match, int(time.time()))
+        guildstates[ctx.guild.id].title = match
+        play_song(ctx.guild.id, match, int(time.time()))
         await ctx.send("**♂NOW♂PLAYING♂:** " + guildstates[ctx.guild.id].title)
 
 
@@ -484,17 +457,7 @@ async def keyword(ctx, *args):
 
     if len(matches) == 1:
         guildstates[ctx.guild.id].is_shuffling = False
-        if guildstates[ctx.guild.id].is_louder:
-            distorted_file = distort_audio(
-                songdir + matches[0],
-                songdir,
-                guildstates[ctx.guild.id].louder_magnitude,
-                ctx.guild.id,
-            )
-            guildstates[ctx.guild.id].title = matches[0]
-            play_song(ctx.guild.id, distorted_file, int(time.time()), settitle=False)
-        else:
-            play_song(ctx.guild.id, matches[0], int(time.time()))
+        play_song(ctx.guild.id, matches[0], int(time.time()))
         await ctx.send("**♂NOW♂PLAYING♂:** " + guildstates[ctx.guild.id].title)
     elif len(matches) > 1:
         outstr = "♂MULTIPLE♂MATCHES♂FOUND♂:\n"
@@ -649,7 +612,7 @@ validmediatypes = ["wav", "webm", "mp4", "mp3", "avi", "mkv", "ogg"]
 for i in tempitems:
     suffix = i.split(".")[-1]
     if suffix in validmediatypes:
-        songitems.append(validmediatypes)
+        songitems.append(i)
 
 if len(songitems) < 1:
     print("Error: No valid media files in specified directory.")
