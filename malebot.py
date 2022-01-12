@@ -267,7 +267,7 @@ async def volume(ctx, arg):
             if floatvol > 0 and floatvol <= 1.0:
                 get_voice_client(ctx.guild.id).source.volume = floatvol
             else:
-                await ctx.send("♂FUCK♂YOU♂ (use a decimal number 0.01 to 1.00)")
+                raise ValueError
         except:
             await ctx.send("♂FUCK♂YOU♂ (Use a decimal 0.01 to 1.00, make sure the bot is playing)")
 
@@ -508,6 +508,59 @@ async def keyword(ctx, *args):
             await ctx.send(outstr)
     else:
         await ctx.send("♂NO♂MATCHES♂")
+
+
+@client.command(aliases=["qr"])
+async def qremove(ctx, *args):
+    """Clear the song queue for a guild."""
+    print("QREMOVE\t|\t" + str(ctx.guild.id))
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+
+    if len(args) == 0:
+        await ctx.send("♂ENTER♂AN♂INTEGER♂POSITION♂")
+        return
+    try:
+        test = int(args[0])
+        if test <= 1 or test > guildstates[ctx.guild.id].queue.size:
+            raise ValueError
+    except:
+        await ctx.send("♂INVALID♂POSITION♂")
+        return
+    guildstates[ctx.guild.id].queue.remove(args[0] - 1)
+
+
+@client.command(aliases=["qc"])
+async def qclear(ctx):
+    """Clear the song queue for a guild."""
+    print("QCLEAR\t|\t" + str(ctx.guild.id))
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+
+    guildstates[ctx.guild.id].queue.clear()
+
+
+@client.command(aliases=["qs"])
+async def qswap(ctx, *args):
+    pass
+
+
+@client.command(aliases=["qv"])
+async def qview(ctx):
+    """Display the song queue for a guild."""
+    print("QVIEW\t|\t" + str(ctx.guild.id))
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+
+    qstring = "\n\t\t**\-\-\-\-\-\-\-\-\-♂QUEUE♂\-\-\-\-\-\-\-\-\-**\n"
+    songn = 1
+    for song in guildstates[ctx.guild.id].queue.songlist():
+        qstring += str(songn) + "\t|\t" + song + "\n"
+        songn += 1
+    await ctx.send(qstring)
 
 
 @client.command()

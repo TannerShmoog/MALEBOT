@@ -1,3 +1,6 @@
+from queueclass import MusicQueue
+
+
 class GuildStateContainer:
     def __init__(self):
         self.is_shuffling = False
@@ -11,3 +14,4 @@ class GuildStateContainer:
         self.timestamp = None
         self.id = None
         self.init_channel = None
+        self.queue = MusicQueue()
