@@ -20,9 +20,6 @@ class MusicQueue:
     def size(self):
         return len(self.songlist)
 
-    def songlist(self):
-        return self.songlist
-
     def swap(self, i1, i2):
         temp = self.songlist[i1]
         self.songlist[i1] = self.songlist[i2]

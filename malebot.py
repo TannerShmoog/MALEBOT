@@ -48,24 +48,28 @@ def get_voice_client(guildid):
     return None
 
 
-def play_song(guildid, song, timestamp, stopflag=True, ffmpegoptions=""):
+def play_song(guildid, song, timestamp, stopflag=True, ffmpegoptions="", settitle=True):
     """Set state for the guild in question, then start the FFMPEG player object."""
-
-    guildstates[guildid].title = song
+    if settitle:
+        guildstates[guildid].title = song
     guildstates[guildid].timestamp = timestamp
+    guildstates[guildid].now_playing = song
 
     if stopflag:  # if we should stop the currently playing song immediately or not
         get_voice_client(guildid).stop()
     print("NP:\t" + song + "\t|\t" + str(guildid))
     if guildstates[guildid].is_louder:
-        song = distort_audio(
-            songdir + song,
-            songdir,
-            guildstates[guildid].louder_magnitude,
-            guildid,
-        )
+        if not guildstates[guildid].now_playing.startswith("___") and not guildstates[
+            guildid
+        ].now_playing.endswith("temp.wav"):
+            song = distort_audio(
+                songdir + song,
+                songdir,
+                guildstates[guildid].louder_magnitude,
+                guildid,
+            )
 
-    guildstates[guildid].now_playing = song  # set the now playing AFTER potentially distorting
+    guildstates[guildid].now_playing = song  # set file again AFTER potential distort
     get_voice_client(guildid).play(
         discord.FFmpegPCMAudio(songdir + song, before_options=ffmpegoptions),
         after=lambda e: print("FINISHED:\t" + str(guildid)),
@@ -168,7 +172,7 @@ async def shuffle_loop():
         if not is_connected(client.get_guild(guild.id)):
             remove.append(key)  # to avoid inconsistent state from unexpected disconnection
         else:
-            if get_voice_client(guild.id) and guild.is_shuffling:
+            if get_voice_client(guild.id) and guild.is_shuffling and not guild.is_queueing:
                 if get_voice_client(guild.id).is_playing() is not None:
                     if (
                         not get_voice_client(guild.id).is_playing()
@@ -181,6 +185,24 @@ async def shuffle_loop():
                         await guildstates[guild.id].init_channel.send(
                             "**♂NOW♂PLAYING♂:** " + guildstates[guild.id].title
                         )
+            elif get_voice_client(guild.id) and guild.is_queueing:
+                if get_voice_client(guild.id).is_playing() is not None:
+                    if (
+                        not get_voice_client(guild.id).is_playing()
+                        and not get_voice_client(guild.id).is_paused()
+                    ):
+                        if not guildstates[guild.id].queue.is_empty():
+                            play_song(
+                                guild.id,
+                                guildstates[guild.id].queue.playsong(),
+                                int(time.time()),
+                                stopflag=False,
+                            )
+                            await guildstates[guild.id].init_channel.send(
+                                "**♂NOW♂PLAYING♂:** " + guildstates[guild.id].title
+                            )
+                        if guildstates[guild.id].queue.is_empty():
+                            guildstates[guild.id].is_queueing = False
 
     for key in remove:
         guildstates.pop(key)
@@ -193,6 +215,8 @@ async def randomplay(ctx):
     if not is_connected(ctx.guild):
         await connect_guild(ctx)
     guildstates[ctx.guild.id].is_shuffling = True
+    guildstates[ctx.guild.id].is_queueing = False
+    guildstates[ctx.guild.id].queue.clear()
 
 
 @client.command(aliases=["stop", "st"])
@@ -207,6 +231,8 @@ async def deactivate(ctx):
             ):
                 get_voice_client(ctx.guild.id).stop()
                 guildstates[ctx.guild.id].is_shuffling = False
+                guildstates[ctx.guild.id].is_queueing = False
+                guildstates[ctx.guild.id].queue.clear()
 
 
 @client.command(aliases=["sk"])
@@ -272,9 +298,7 @@ async def replay(ctx):
 
     if guildstates[ctx.guild.id].now_playing is not None:
         play_song(
-            ctx.guild.id,
-            guildstates[ctx.guild.id].now_playing,
-            int(time.time()),
+            ctx.guild.id, guildstates[ctx.guild.id].now_playing, int(time.time()), settitle=False
         )
         await ctx.send("**♂NOW♂PLAYING♂:** " + guildstates[ctx.guild.id].title)
     else:
@@ -306,6 +330,7 @@ async def seek(ctx, *args):
             guildstates[ctx.guild.id].now_playing,
             int(time.time()) - int(args[0]),
             ffmpegoptions="-ss " + args[0],
+            settitle=False,
         )  # Subtract the amount of seconds seeked to from the current time to simulate an earlier start time
         await ctx.send("**♂SEEKING♂TO♂:** " + args[0] + " SECONDS♂")
     else:
@@ -429,9 +454,10 @@ async def fuzzy(ctx, *args):
                 match = i
 
     if match:
-        guildstates[ctx.guild.id].title = match
-        play_song(ctx.guild.id, match, int(time.time()))
-        await ctx.send("**♂NOW♂PLAYING♂:** " + guildstates[ctx.guild.id].title)
+        guildstates[ctx.guild.id].is_shuffling = False
+        guildstates[ctx.guild.id].is_queueing = True
+        guildstates[ctx.guild.id].queue.add(match)
+        await ctx.send("**♂QUEUED♂:** " + match)
 
 
 @client.command(aliases=["key"])
@@ -457,8 +483,9 @@ async def keyword(ctx, *args):
 
     if len(matches) == 1:
         guildstates[ctx.guild.id].is_shuffling = False
-        play_song(ctx.guild.id, matches[0], int(time.time()))
-        await ctx.send("**♂NOW♂PLAYING♂:** " + guildstates[ctx.guild.id].title)
+        guildstates[ctx.guild.id].is_queueing = True
+        guildstates[ctx.guild.id].queue.add(matches[0])
+        await ctx.send("**♂QUEUED♂:** " + matches[0])
     elif len(matches) > 1:
         outstr = "♂MULTIPLE♂MATCHES♂FOUND♂:\n"
         count = 0
@@ -476,7 +503,7 @@ async def keyword(ctx, *args):
 @client.command(aliases=["qr"])
 async def qremove(ctx, *args):
     """Clear the song queue for a guild."""
-    print("QREMOVE\t|\t" + str(ctx.guild.id))
+    print("QREMOVE\t|\t" + str(ctx.guild.id) + "\t|\t" + str(args))
     if not is_connected(ctx.guild):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
@@ -486,12 +513,12 @@ async def qremove(ctx, *args):
         return
     try:
         test = int(args[0])
-        if test <= 1 or test > guildstates[ctx.guild.id].queue.size:
+        if test <= 1 or test > guildstates[ctx.guild.id].queue.size():
             raise ValueError
     except:
         await ctx.send("♂INVALID♂POSITION♂")
         return
-    guildstates[ctx.guild.id].queue.remove(args[0] - 1)
+    guildstates[ctx.guild.id].queue.remove(int(args[0]) - 1)
 
 
 @client.command(aliases=["qc"])
@@ -518,9 +545,13 @@ async def qview(ctx):
         await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
         return
 
+    if guildstates[ctx.guild.id].queue.is_empty():
+        await ctx.send("♂QUEUE♂IS♂EMPTY♂")
+        return
+
     qstring = "\n\t\t**\-\-\-\-\-\-\-\-\-♂QUEUE♂\-\-\-\-\-\-\-\-\-**\n"
     songn = 1
-    for song in guildstates[ctx.guild.id].queue.songlist():
+    for song in guildstates[ctx.guild.id].queue.songlist:
         qstring += str(songn) + "\t|\t" + song + "\n"
         songn += 1
     await ctx.send(qstring)
