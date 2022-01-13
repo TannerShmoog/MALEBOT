@@ -57,11 +57,10 @@ def play_song(guildid, song, timestamp, stopflag=True, ffmpegoptions="", settitl
 
     if stopflag:  # if we should stop the currently playing song immediately or not
         get_voice_client(guildid).stop()
-    print("NP:\t" + song + "\t|\t" + str(guildid))
+
+    checknp = guildstates[guildid].now_playing
     if guildstates[guildid].is_louder:
-        if not guildstates[guildid].now_playing.startswith("___") and not guildstates[
-            guildid
-        ].now_playing.endswith("temp.wav"):
+        if not checknp.startswith("___") and not checknp.endswith("temp.wav"):
             song = distort_audio(
                 songdir + song,
                 songdir,
@@ -70,6 +69,7 @@ def play_song(guildid, song, timestamp, stopflag=True, ffmpegoptions="", settitl
             )
 
     guildstates[guildid].now_playing = song  # set file again AFTER potential distort
+    print("NP:\t" + song + "\t|\t" + str(guildid))
     get_voice_client(guildid).play(
         discord.FFmpegPCMAudio(songdir + song, before_options=ffmpegoptions),
         after=lambda e: print("FINISHED:\t" + str(guildid)),
