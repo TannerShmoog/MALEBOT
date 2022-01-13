@@ -602,13 +602,13 @@ async def help(ctx):
         "Disconnects the bot from voice."
         + separator
         + "**Shuffle Play**\t|\t(aliases: 'shuffle', 's')\n"
-        "Plays random song on loop until stopped."
+        "Plays random song on loop until stopped, clears the queue on activation."
         + separator
         + "**Stop**\t|\t(aliases: 'stop', 'st')\n"
-        "Stops the current shuffle queue." + separator + "**Skip**\t|\t(aliases: 'skip', 'sk')\n"
-        "Skips the current song and picks a new random one."
+        "Stops shuffling and clears the queue."
         + separator
-        + "**Pause**\t|\t(aliases: 'pause', 'p')\n"
+        + "**Skip**\t|\t(aliases: 'skip', 'sk')\n"
+        "Skips the current song." + separator + "**Pause**\t|\t(aliases: 'pause', 'p')\n"
         "Pauses the currently playing song."
         + separator
         + "**Resume**\t|\t(aliases: 'resume', 'r')\n"
@@ -629,10 +629,20 @@ async def help(ctx):
         " Optionally takes an integer 5-50 as an argument to set magnitude."
         + separator
         + "**Fuzzy**\t|\t(aliases: 'fuzzy', 'f')\n"
-        "Does a simple fuzzy search for the argument in quotes."
+        "Does a simple fuzzy search for the argument in quotes, adds the result to the queue and stops shuffling."
         + separator
         + "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\n"
-        "Searches for matches containing all keywords." + separator
+        "Searches for matches containing all keywords, adds the result to the queue and stops shuffling."
+        + separator
+        + "**Queue Remove**\t|\t(aliases: 'qremove', 'qr')\n"
+        "Removes the song at the specified integer position in the queue."
+        + separator
+        + "**Queue Clear**\t|\t(aliases: 'qclear', 'qc')\n"
+        "Clears the queue." + separator + "**Queue Swap**\t|\t(aliases: 'qswap', 'qs')\n"
+        "Swaps the positions of 2 songs in the queue given their integer positions as arguments."
+        + separator
+        + "**Queue View**\t|\t(aliases: 'qview', 'qv')\n"
+        "Display all songs currently in queue and their positions." + separator
     )
 
 
