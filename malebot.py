@@ -183,7 +183,7 @@ async def shuffle_loop():
                             songchoice = random.choice(songitems)  # avoid altered files
                         play_song(guild.id, songchoice, int(time.time()), stopflag=False)
                         await guildstates[guild.id].init_channel.send(
-                            "**♂NOW♂PLAYING♂:** " + guildstates[guild.id].title
+                            "**♂NOW♂PLAYING♂:\t** " + guildstates[guild.id].title
                         )
             elif get_voice_client(guild.id) and guild.is_queueing:
                 if get_voice_client(guild.id).is_playing() is not None:
@@ -199,7 +199,7 @@ async def shuffle_loop():
                                 stopflag=False,
                             )
                             await guildstates[guild.id].init_channel.send(
-                                "**♂NOW♂PLAYING♂:** " + guildstates[guild.id].title
+                                "**♂NOW♂PLAYING♂:\t** " + guildstates[guild.id].title
                             )
                         if guildstates[guild.id].queue.is_empty():
                             guildstates[guild.id].is_queueing = False
@@ -300,7 +300,7 @@ async def replay(ctx):
         play_song(
             ctx.guild.id, guildstates[ctx.guild.id].now_playing, int(time.time()), settitle=False
         )
-        await ctx.send("**♂NOW♂PLAYING♂:** " + guildstates[ctx.guild.id].title)
+        await ctx.send("**♂NOW♂PLAYING♂:\t** " + guildstates[ctx.guild.id].title)
     else:
         await ctx.send("♂NOTHING♂PLAYING♂")
 
@@ -365,7 +365,7 @@ async def nowplaying(ctx):
         currenttime = time.time() - guildstates[ctx.guild.id].timestamp
         filled = int((currenttime / duration) * 25)  # how much of progress bar to fill
         await ctx.send(
-            "**♂NOW♂PLAYING♂:** "
+            "**♂NOW♂PLAYING♂:\t** "
             + guildstates[ctx.guild.id].title
             + "\n```"
             + time_to_str(currenttime)
@@ -432,7 +432,7 @@ async def distort(ctx, *args):
 
 @client.command(aliases=["f"])
 async def fuzzy(ctx, *args):
-    """Perform a fuzzy search for the string given by the user.
+    """Perform a fuzzy search for the string given by the user. Queues the result.
     Uses Simon White's 'Strike a Match' algorithm, as it is more length agnostic than most.
 
     More information: http://www.catalysoft.com/articles/strikeamatch.html
@@ -462,8 +462,9 @@ async def fuzzy(ctx, *args):
 
 @client.command(aliases=["key"])
 async def keyword(ctx, *args):
-    """Perform a keyword search for matches including all keywords given as arguments."""
-    """If multiple matches are found, they are displayed to the user."""
+    """Perform a keyword search for matches including all keywords given as arguments. Queues the result.
+    If multiple matches are found, they are displayed to the user.
+    """
     print("KEYWORD\t|\t" + str(ctx.guild.id) + "\t|\t" + str(args))
     if not is_connected(ctx.guild):
         await connect_guild(ctx)
@@ -513,12 +514,13 @@ async def qremove(ctx, *args):
         return
     try:
         test = int(args[0])
-        if test <= 1 or test > guildstates[ctx.guild.id].queue.size():
+        if test < 1 or test > guildstates[ctx.guild.id].queue.size():
             raise ValueError
     except:
         await ctx.send("♂INVALID♂POSITION♂")
         return
-    guildstates[ctx.guild.id].queue.remove(int(args[0]) - 1)
+    removed = guildstates[ctx.guild.id].queue.remove(int(args[0]) - 1)
+    await ctx.send("**♂REMOVED♂:\t**" + removed)
 
 
 @client.command(aliases=["qc"])
@@ -530,11 +532,40 @@ async def qclear(ctx):
         return
 
     guildstates[ctx.guild.id].queue.clear()
+    await ctx.send("♂CLEARED♂QUEUE♂")
 
 
 @client.command(aliases=["qs"])
 async def qswap(ctx, *args):
-    pass
+    """Swap 2 songs at positions given as arguments in the queue."""
+    print("QSWAP\t|\t" + str(ctx.guild.id) + "\t|\t" + str(args))
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+
+    if len(args) < 2:
+        await ctx.send("♂GIVE♂TWO♂INTEGER♂POSITIONS♂TO♂SWAP♂")
+        return
+    try:
+        test1 = int(args[0])
+        if test1 < 1 or test1 > guildstates[ctx.guild.id].queue.size():
+            raise ValueError
+
+        test2 = int(args[1])
+        if test2 < 1 or test2 > guildstates[ctx.guild.id].queue.size():
+            raise ValueError
+    except:
+        await ctx.send("♂INVALID♂POSITIONS♂")
+        return
+
+    removed = guildstates[ctx.guild.id].queue.swap(test1 - 1, test2 - 1)
+    await ctx.send(
+        "**♂SWAPPED♂:\t**"
+        + guildstates[ctx.guild.id].queue.songlist[test1 - 1]
+        + "\n**♂WITH♂:\t**"
+        + guildstates[ctx.guild.id].queue.songlist[test2 - 1]
+    )
+    print(guildstates[ctx.guild.id].queue.songlist)
 
 
 @client.command(aliases=["qv"])

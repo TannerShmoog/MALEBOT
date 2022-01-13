@@ -6,7 +6,7 @@ class MusicQueue:
         self.songlist.append(songName)
 
     def remove(self, position):
-        self.songlist.pop(position)
+        return self.songlist.pop(position)
 
     def clear(self):
         self.songlist = []
