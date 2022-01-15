@@ -1,4 +1,6 @@
 class MusicQueue:
+    """Simple first in first out queue."""
+
     def __init__(self):
         self.songlist = []
 

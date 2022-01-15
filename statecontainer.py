@@ -2,6 +2,8 @@ from queueclass import MusicQueue
 
 
 class GuildStateContainer:
+    """Stores state information for a guild."""
+
     def __init__(self):
         self.is_shuffling = False
         self.is_queueing = False
