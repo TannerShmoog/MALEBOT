@@ -62,8 +62,10 @@ def play_song(guildid, song, timestamp, stopflag=True, ffmpegoptions="", settitl
     if guildstates[guildid].is_louder:
         if not checknp.startswith("___") and not checknp.endswith("temp.wav"):
             song = distort_audio(
-                songdir + song,
                 songdir,
+                song,
+                songdir,
+                "___" + str(guildid) + "-temp.wav",
                 guildstates[guildid].louder_magnitude,
                 guildid,
             )
@@ -671,6 +673,8 @@ except:
 try:
     with open("songdir.txt", "r") as songfile:
         songdir = songfile.read().strip()
+    if not songdir.endswith("/"):
+        songdir = songdir + "/"
     tempitems = os.listdir(songdir)
 except:
     print(

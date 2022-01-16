@@ -12,7 +12,7 @@ def time_to_str(seconds):
     return outstr
 
 
-def distort_audio(inputpath, outputdir, magnitude, guildid):
+def distort_audio(inputdir, inputfile, outputdir, outputfile, magnitude, guildid):
     """Distort an input file to a specified magnitude, returns
     path to the ouput file.
     """
@@ -21,22 +21,21 @@ def distort_audio(inputpath, outputdir, magnitude, guildid):
             "ffmpeg",
             "-y",
             "-i",
-            inputpath,
-            outputdir + "___" + str(guildid) + "-temp.wav",
+            inputdir + inputfile,
+            outputdir + "___1" + str(guildid) + "-temp.wav",
             "-loglevel",
             "quiet",
         ]
     )
-    output_file = "___1-" + str(guildid) + "-temp.wav"
     tfm = sox.Transformer()
     tfm.norm(-1.0)
     tfm.bass(magnitude)
     tfm.treble(magnitude * 0.42)
     tfm.gain(magnitude * 2, normalize=False)
     tfm.compand()
-    tfm.build(outputdir + "___" + str(guildid) + "-temp.wav", outputdir + output_file)
-    os.remove(outputdir + "___" + str(guildid) + "-temp.wav")
-    return output_file
+    tfm.build(outputdir + "___1" + str(guildid) + "-temp.wav", outputdir + outputfile)
+    os.remove(outputdir + "___1" + str(guildid) + "-temp.wav")
+    return outputfile
 
 
 def letter_pairs(string):
