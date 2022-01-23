@@ -8,6 +8,7 @@ class GuildStateContainer:
         self.is_shuffling = False
         self.is_queueing = False
         self.is_louder = False
+        self.is_looping = False
         self.louder_magnitude = -1
 
         self.now_playing = None

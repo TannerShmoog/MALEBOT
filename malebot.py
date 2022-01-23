@@ -174,7 +174,15 @@ async def shuffle_loop():
         if not is_connected(client.get_guild(guild.id)):
             remove.append(key)  # to avoid inconsistent state from unexpected disconnection
         else:
-            if get_voice_client(guild.id) and guild.is_shuffling and not guild.is_queueing:
+            if get_voice_client(guild.id) and guild.is_looping:
+                if get_voice_client(guild.id).is_playing() is not None:
+                    if (
+                        not get_voice_client(guild.id).is_playing()
+                        and not get_voice_client(guild.id).is_paused()
+                    ):
+                        play_song(guild.id, guild.now_playing, int(time.time()), settitle=False)
+                        await guild.init_channel.send("**♂NOW♂PLAYING♂:\t** " + guild.title)
+            elif get_voice_client(guild.id) and guild.is_shuffling and not guild.is_queueing:
                 if get_voice_client(guild.id).is_playing() is not None:
                     if (
                         not get_voice_client(guild.id).is_playing()
@@ -184,27 +192,23 @@ async def shuffle_loop():
                         while songchoice == "" or songchoice[-8:] == "temp.wav":
                             songchoice = random.choice(songitems)  # avoid altered files
                         play_song(guild.id, songchoice, int(time.time()), stopflag=False)
-                        await guildstates[guild.id].init_channel.send(
-                            "**♂NOW♂PLAYING♂:\t** " + guildstates[guild.id].title
-                        )
+                        await guild.init_channel.send("**♂NOW♂PLAYING♂:\t** " + guild.title)
             elif get_voice_client(guild.id) and guild.is_queueing:
                 if get_voice_client(guild.id).is_playing() is not None:
                     if (
                         not get_voice_client(guild.id).is_playing()
                         and not get_voice_client(guild.id).is_paused()
                     ):
-                        if not guildstates[guild.id].queue.is_empty():
+                        if not guild.queue.is_empty():
                             play_song(
                                 guild.id,
-                                guildstates[guild.id].queue.playsong(),
+                                guild.queue.playsong(),
                                 int(time.time()),
                                 stopflag=False,
                             )
-                            await guildstates[guild.id].init_channel.send(
-                                "**♂NOW♂PLAYING♂:\t** " + guildstates[guild.id].title
-                            )
-                        if guildstates[guild.id].queue.is_empty():
-                            guildstates[guild.id].is_queueing = False
+                            await guild.init_channel.send("**♂NOW♂PLAYING♂:\t** " + guild.title)
+                        if guild.queue.is_empty():
+                            guild.is_queueing = False
 
     for key in remove:
         guildstates.pop(key)
@@ -503,6 +507,26 @@ async def keyword(ctx, *args):
         await ctx.send("♂NO♂MATCHES♂")
 
 
+@client.command(aliases=["l"])
+async def loop(ctx):
+    """Toggle loop mode for a guild."""
+    print("LOOP\t|\t" + str(ctx.guild.id))
+    if not is_connected(ctx.guild):
+        await ctx.send("♂NOT♂CONNECTED♂OR♂PLAYING♂")
+        return
+
+    if guildstates[ctx.guild.id].now_playing:
+        guildstates[ctx.guild.id].is_looping = not guildstates[ctx.guild.id].is_looping
+    else:
+        await ctx.send("♂NOTHING♂PLAYING♂")
+        return
+
+    if guildstates[ctx.guild.id].is_looping:
+        await ctx.send("**♂LOOP TOGGLED♂:\tON**")
+    else:
+        await ctx.send("**♂LOOP TOGGLED♂:\tOFF**")
+
+
 @client.command(aliases=["qr"])
 async def qremove(ctx, *args):
     """Clear the song queue for a guild."""
@@ -629,6 +653,9 @@ async def help(ctx):
         "Replays current song." + separator + "**Distort**\t|\t(aliases: 'distort', 'LOUDER')\n"
         "Heavily distorts current song, and toggles distorted mode on or off."
         " Optionally takes an integer 5-50 as an argument to set magnitude."
+        + separator
+        + "**Loop**\t|\t(aliases: 'loop', 'l')\n"
+        "Toggle continuous playback of the currently playing song on or off."
         + separator
         + "**Fuzzy**\t|\t(aliases: 'fuzzy', 'f')\n"
         "Does a simple fuzzy search for the argument in quotes, adds the result to the queue and stops shuffling."
