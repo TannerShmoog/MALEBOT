@@ -20,7 +20,7 @@ global songdir
 global guildstates
 
 # setup intents to ensure bot has required permissions
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.members = True
 
 # initialize the client object
@@ -70,7 +70,8 @@ def play_song(guildid, song, timestamp, stopflag=True, ffmpegoptions="", settitl
                 guildid,
             )
 
-    guildstates[guildid].now_playing = song  # set file again AFTER potential distort
+    # set file again AFTER potential distort
+    guildstates[guildid].now_playing = song
     print("NP:\t" + song + "\t|\t" + str(guildid))
     get_voice_client(guildid).play(
         discord.FFmpegPCMAudio(songdir + song, before_options=ffmpegoptions),
@@ -87,7 +88,8 @@ async def disconnect_guild(guild):
         return
     get_voice_client(guild.id).stop()
     await get_voice_client(guild.id).disconnect()
-    await asyncio.sleep(1)  # to make sure the disconnect finishes before removing the state
+    # to make sure the disconnect finishes before removing the state
+    await asyncio.sleep(1)
     if guild.id in guildstates.keys():
         guildstates.pop(guild.id)
     print("DISCONNECTED:\t" + str(guild.id))
@@ -172,7 +174,8 @@ async def shuffle_loop():
     for key in guildstates.keys():
         guild = guildstates[key]
         if not is_connected(client.get_guild(guild.id)):
-            remove.append(key)  # to avoid inconsistent state from unexpected disconnection
+            # to avoid inconsistent state from unexpected disconnection
+            remove.append(key)
         else:
             if get_voice_client(guild.id) and guild.is_looping:
                 if get_voice_client(guild.id).is_playing() is not None:
@@ -180,7 +183,8 @@ async def shuffle_loop():
                         not get_voice_client(guild.id).is_playing()
                         and not get_voice_client(guild.id).is_paused()
                     ):
-                        play_song(guild.id, guild.now_playing, int(time.time()), settitle=False)
+                        play_song(guild.id, guild.now_playing,
+                                  int(time.time()), settitle=False)
                         await guild.init_channel.send("**♂NOW♂PLAYING♂:\t** " + guild.title)
             elif get_voice_client(guild.id) and guild.is_shuffling and not guild.is_queueing:
                 if get_voice_client(guild.id).is_playing() is not None:
@@ -190,8 +194,10 @@ async def shuffle_loop():
                     ):
                         songchoice = ""
                         while songchoice == "" or songchoice[-8:] == "temp.wav":
-                            songchoice = random.choice(songitems)  # avoid altered files
-                        play_song(guild.id, songchoice, int(time.time()), stopflag=False)
+                            songchoice = random.choice(
+                                songitems)  # avoid altered files
+                        play_song(guild.id, songchoice, int(
+                            time.time()), stopflag=False)
                         await guild.init_channel.send("**♂NOW♂PLAYING♂:\t** " + guild.title)
             elif get_voice_client(guild.id) and guild.is_queueing:
                 if get_voice_client(guild.id).is_playing() is not None:
@@ -369,7 +375,8 @@ async def nowplaying(ctx):
         )
         duration = int(float(stringduration.strip().decode("utf-8")))
         currenttime = time.time() - guildstates[ctx.guild.id].timestamp
-        filled = int((currenttime / duration) * 25)  # how much of progress bar to fill
+        # how much of progress bar to fill
+        filled = int((currenttime / duration) * 25)
         await ctx.send(
             "**♂NOW♂PLAYING♂:\t** "
             + guildstates[ctx.guild.id].title
@@ -412,7 +419,8 @@ async def distort(ctx, *args):
             await ctx.send("♂MAGNITUDE♂MUST♂BE♂A♂POSITIVE♂INTEGER♂BETWEEN♂5♂AND♂50♂")
             return
 
-    guildstates[ctx.guild.id].is_louder = not guildstates[ctx.guild.id].is_louder  # toggle mode
+    # toggle mode
+    guildstates[ctx.guild.id].is_louder = not guildstates[ctx.guild.id].is_louder
 
     if guildstates[ctx.guild.id].now_playing is not None:
         currenttime = int(time.time() - guildstates[ctx.guild.id].timestamp)
@@ -453,7 +461,8 @@ async def fuzzy(ctx, *args):
     for i in songitems:
         if not i[-8:] == "temp.wav":
             score = match_compare(
-                re.sub(r"[^a-zA-Z0-9♂ ]+", "", i.lower().split(".")[0]).replace("♂", " "), keywords
+                re.sub(r"[^a-zA-Z0-9♂ ]+", "", i.lower().split(".")
+                       [0]).replace("♂", " "), keywords
             )
             if score > max:
                 max = score
@@ -466,7 +475,7 @@ async def fuzzy(ctx, *args):
         await ctx.send("**♂QUEUED♂:** " + match)
 
 
-@client.command(aliases=["key"])
+@client.command(aliases=["kw"])
 async def keyword(ctx, *args):
     """Perform a keyword search for matches including all keywords given as arguments. Queues the result.
     If multiple matches are found, they are displayed to the user.
@@ -480,7 +489,8 @@ async def keyword(ctx, *args):
 
     for i in songitems:
         flag = True
-        item = re.sub(r"[^a-zA-Z0-9♂ ]+", "", i.lower().split(".")[0]).replace("♂", " ")
+        item = re.sub(r"[^a-zA-Z0-9♂ ]+", "",
+                      i.lower().split(".")[0]).replace("♂", " ")
 
         for word in keywords:
             if word not in item:
@@ -619,58 +629,61 @@ async def help(ctx):
     """Help command, displays command information."""
     separator = "\n\-\-\-\n"
     await ctx.send(
-        "\n\t\t**\-\-\-\-\-\-\-\-\-♂MALE♂BOT♂HELP♂\-\-\-\-\-\-\-\-\-**\n"
+        "\n\t\t# ♂MALE♂BOT♂HELP♂\n"
         "\t\t*COMMANDS (case sensitive):*\n"
-        "**Join**\t|\t(aliases: 'getoverhere', 'join', 'c')\n"
+        "**Join**\t|\t(getoverhere, join, c)\n"
         "Connects the bot to the voice channel the author is connected to."
         + separator
-        + "**Leave**\t|\t(aliases: 'fuckyou', 'leave', 'dc')\n"
+        + "**Leave**\t|\t(fuckyou, leave, dc)\n"
         "Disconnects the bot from voice."
         + separator
-        + "**Shuffle Play**\t|\t(aliases: 'shuffle', 's')\n"
+        + "**Shuffle Play**\t|\t(shuffle, s)\n"
         "Plays random song on loop until stopped, clears the queue on activation."
         + separator
-        + "**Stop**\t|\t(aliases: 'stop', 'st')\n"
+        + "**Stop**\t|\t(stop, st)\n"
         "Stops shuffling and clears the queue."
         + separator
-        + "**Skip**\t|\t(aliases: 'skip', 'sk')\n"
-        "Skips the current song." + separator + "**Pause**\t|\t(aliases: 'pause', 'p')\n"
+        + "**Skip**\t|\t(skip, sk)\n"
+        "Skips the current song." + separator +
+        "**Pause**\t|\t(pause, p)\n"
         "Pauses the currently playing song."
         + separator
-        + "**Resume**\t|\t(aliases: 'resume', 'r')\n"
+        + "**Resume**\t|\t(resume, r)\n"
         "Resumes the currently playing song."
         + separator
-        + "**Volume**\t|\t(aliases: 'volume', 'v')\n"
+        + "**Volume**\t|\t(volume, v)\n"
         "Sets the volume to a decimal value 0.01 to 1.00."
         + separator
-        + "**Seek**\t|\t(aliases: 'seek', 'se')\n"
+        + "**Seek**\t|\t(seek, se)\n"
         "Seek to time given an integer value in seconds."
         + separator
-        + "**Now Playing**\t|\t(aliases: 'nowplaying', 'np')\n"
+        + "**Now Playing**\t|\t(nowplaying, np)\n"
         "Show a progress bar for the current song."
         + separator
-        + "**Replay**\t|\t(aliases: 'replay', 're')\n"
-        "Replays current song." + separator + "**Distort**\t|\t(aliases: 'distort', 'LOUDER')\n"
+        + "**Replay**\t|\t(replay, re)\n"
+        "Replays current song." + separator +
+        "**Distort**\t|\t(distort, LOUDER)\n"
         "Heavily distorts current song, and toggles distorted mode on or off."
         " Optionally takes an integer 5-50 as an argument to set magnitude."
         + separator
-        + "**Loop**\t|\t(aliases: 'loop', 'l')\n"
+        + "**Loop**\t|\t(loop, l)\n"
         "Toggle continuous playback of the currently playing song on or off."
         + separator
-        + "**Fuzzy**\t|\t(aliases: 'fuzzy', 'f')\n"
+        + "**Fuzzy**\t|\t(fuzzy, f)\n"
         "Does a simple fuzzy search for the argument in quotes, adds the result to the queue and stops shuffling."
         + separator
-        + "**Keyword Search**\t|\t(aliases: 'keyword', 'key')\n"
+        + "**Keyword Search**\t|\t(keyword, kw)\n"
         "Searches for matches containing all keywords, adds the result to the queue and stops shuffling."
         + separator
-        + "**Queue Remove**\t|\t(aliases: 'qremove', 'qr')\n"
+        + "**Queue Remove**\t|\t(qremove, qr)\n"
         "Removes the song at the specified integer position in the queue."
         + separator
-        + "**Queue Clear**\t|\t(aliases: 'qclear', 'qc')\n"
-        "Clears the queue." + separator + "**Queue Swap**\t|\t(aliases: 'qswap', 'qs')\n"
+        + "**Queue Clear**\t|\t(qclear, qc)\n"
+        "Clears the queue." + separator +
+        "**Queue Swap**\t|\t(qswap, qs)\n"
         "Swaps the positions of 2 songs in the queue given their integer positions as arguments."
         + separator
-        + "**Queue View**\t|\t(aliases: 'qview', 'qv')\n"
+        + "**Queue View**\t|\t(qview, qv)\n"
         "Display all songs currently in queue and their positions." + separator
     )
 
